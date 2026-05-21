@@ -229,6 +229,7 @@ export const FixtureMundial = () => {
 
                     <div className="teams-container mt-2">
                       <div className="team-box">
+                      <img src={banderas[partido.local]} alt={partido.local} className="flag-icon" />
                         <span className="fs-6">{partido.local}</span>
                         <Form.Control
                           type="number"
@@ -236,7 +237,7 @@ export const FixtureMundial = () => {
                           disabled={bloqueado}
                           value={pred.predLocal ?? ""}
                           onChange={(e) => handleChange(partido.id, "predLocal", e.target.value)}
-                          className="text-center"
+                          className="text-center fw-bold"
                         />
                       </div>
 
@@ -244,13 +245,14 @@ export const FixtureMundial = () => {
 
                       <div className="team-box">
                         <span className="fs-6">{partido.visitante}</span>
+                        <img src={banderas[partido.visitante]} alt={partido.visitante} className="flag-icon" />
                         <Form.Control
                           type="number"
                           min="0"
                           disabled={bloqueado}
                           value={pred.predVisitante ?? ""}
                           onChange={(e) => handleChange(partido.id, "predVisitante", e.target.value)}
-                          className="text-center"
+                          className="text-center fw-bold"
                         />
                       </div>
                     </div>
@@ -360,6 +362,13 @@ export const FixtureMundial = () => {
                 </ul>
               </Card.Body>
             </Card>
+                      {userData?.rol === "admin" && (
+                        <div className="text-center mb-3">
+                          <Link to="/admin-dashboard" className="btn btn-outline-danger btn-sm fw-bold shadow-sm">
+                            ⚙️ Panel de Control Corporativo
+                          </Link>
+                        </div>
+                      )}
 
           </div>
         </aside>

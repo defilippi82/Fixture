@@ -15,5 +15,17 @@
   "bugs": {
     "url": "https://github.com/defilippi82/Fixture/issues"
   },
-  "homepage": "https://github.com/defilippi82/Fixture#readme"
+  "homepage": "https://github.com/defilippi82/Fixture#readme",
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.0.2",
+    "vite": "^8.0.14"
+  },
+  "dependencies": {
+    "bootstrap": "^5.3.8",
+    "firebase": "^12.13.0",
+    "react-bootstrap": "^2.10.10",
+    "react-joyride": "^3.1.0",
+    "react-router-dom": "^7.15.1",
+    "sweetalert2": "^11.26.24"
+  }
 }

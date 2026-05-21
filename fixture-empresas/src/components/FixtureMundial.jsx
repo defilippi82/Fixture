@@ -1,0 +1,370 @@
+import React, { useContext, useEffect, useState } from "react";
+import { Card, Row, Col, Form, Table, Badge, Alert, Tabs, Tab } from "react-bootstrap"; 
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { db } from "/src/firebaseConfig/firebase.js"; 
+import "./FixtureMundial.css";
+import { UserContext } from "./UserContext";
+import { fixtureConLimite } from "./fixtureData"; 
+import { fixtureFase2ConLimite } from "./fixtureData2"; 
+import { calcularPuntos } from "./puntosService";
+import { guardarPrediccion, escucharRanking } from "./prodeService";
+import Swal from "sweetalert2";
+
+const POZO_TOTAL = 100000;
+
+// Combinamos ambos arreglos de datos para el filtrado dinámico en la UI
+const todosLosPartidos = [...fixtureConLimite, ...fixtureFase2ConLimite];
+
+export const FixtureMundial = () => {
+  const { userData, empresaData } = useContext(UserContext); // Traemos la info de la empresa del contexto global
+  const [predicciones, setPredicciones] = useState({});
+  const [ranking, setRanking] = useState([]);
+  const [resultadosReales, setResultadosReales] = useState({}); 
+  const [faseActiva, setFaseActiva] = useState("grupos");
+  
+  useEffect(() => {
+    console.log("Datos corporativos en el fixture:", { userData, empresaData });
+  }, [userData, empresaData]);
+
+  // 1. ESCUCHAR RANKING FILTRADO Y CARGAR PREDICCIONES POR TENANT
+  useEffect(() => {
+    if (!userData?.empresaId) return;
+
+    // Escuchar Ranking exclusivo de la empresa del usuario logueado
+    const unsubscribe = escucharRanking(userData.empresaId, (datos) => {
+      const agrupados = {};
+      datos.forEach((item) => {
+        if (!agrupados[item.legajo]) {
+          agrupados[item.legajo] = { usuario: item.usuario, legajo: item.legajo, puntos: 0 };
+        }
+        agrupados[item.legajo].puntos += item.puntos || 0;
+      });
+      const rankingFinal = Object.values(agrupados).sort((a, b) => b.puntos - a.puntos);
+      setRanking(rankingFinal);
+    });
+
+    // Cargar Predicciones del Usuario filtrando por legajo y empresaId
+    const cargarMisPredicciones = async () => {
+      if (!userData?.legajo || !userData?.empresaId) return;
+      try {
+        const q = query(
+          collection(db, "mundial_predicciones"), 
+          where("legajo", "==", userData.legajo),
+          where("empresaId", "==", userData.empresaId) // Doble chequeo de seguridad multitenant
+        );
+        const querySnapshot = await getDocs(q);
+        const misPredicciones = {};
+        
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          misPredicciones[data.partidoId] = {
+            predLocal: data.golesLocalPrediccion,
+            predVisitante: data.golesVisitantePrediccion
+          };
+        });
+        setPredicciones(misPredicciones);
+      } catch (error) {
+        console.error("Error al cargar predicciones de la empresa:", error);
+      }
+    };
+
+    cargarMisPredicciones();
+    obtenerResultadosAPI();
+
+    return () => unsubscribe();
+  }, [userData]);
+
+  // 2. ACTUALIZACIÓN DE RESULTADOS POR API
+  const obtenerResultadosAPI = async () => {
+    try {
+      const res = await fetch("https://raw.githubusercontent.com/openfootball/world-cup/master/2026/cup.json");
+      const data = await res.json();
+      
+      const resultadosAPI = {};
+      if (data.rounds) {
+        data.rounds.forEach((round) => {
+          round.matches.forEach((match) => {
+            resultadosAPI[match.team1] = {
+              golesLocal: match.score ? match.score[0] : null,
+              golesVisitante: match.score ? match.score[1] : null,
+              estado: match.score ? "Finalizado" : "Programado"
+            };
+          });
+        });
+      }
+      setResultadosReales(resultadosAPI);
+    } catch (error) {
+      console.warn("No se pudo conectar a la API de resultados, usando datos locales.");
+    }
+  };
+
+  // 3. LÓGICA DE CANDADO DE TIEMPO
+  const comprobacionBloqueo = (fechaLimite) => {
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0); 
+    
+    const limite = new Date(`${fechaLimite}T00:00:00`);
+    return hoy > limite; 
+  };
+
+  const formatearFechaTexto = (fechaStr) => {
+    const opciones = { weekday: 'long', day: 'numeric', month: 'long' };
+    const fecha = new Date(`${fechaStr}T00:00:00`);
+    return fecha.toLocaleDateString('es-AR', opciones);
+  };
+
+  const handleChange = (partidoId, campo, valor) => {
+    setPredicciones((prev) => ({
+      ...prev,
+      [partidoId]: {
+        ...prev[partidoId],
+        [campo]: valor === "" ? "" : parseInt(valor),
+      },
+    }));
+  };
+
+  const guardar = async (partido) => {
+    if (!userData || !userData.legajo || !userData.empresaId) {
+        Swal.fire("Error", "No se detectó tu sesión corporativa. Por favor, reingresá.", "error");
+        return;
+    }
+    if (comprobacionBloqueo(partido.fechaLimite)) {
+      Swal.fire("Error", "El tiempo para pronosticar este partido ya finalizó.", "error");
+      return;
+    }
+
+    const pred = predicciones[partido.id];
+    if (!pred || pred.predLocal === undefined || pred.predVisitante === undefined || pred.predLocal === "" || pred.predVisitante === "") {
+      Swal.fire("Atención", "Completá ambos resultados antes de guardar.", "warning");
+      return;
+    }
+
+    const puntos = calcularPuntos(
+      partido.golesLocal,
+      partido.golesVisitante,
+      pred.predLocal,
+      pred.predVisitante
+    );
+
+    // Guardamos incluyendo el ID del tenant correspondiente
+    await guardarPrediccion(
+      userData.legajo,
+      userData.nombre || userData.email,
+      userData.empresaId, // Enviamos el ID de la empresa
+      partido.id,
+      pred.predLocal,
+      pred.predVisitante,
+      puntos
+    );
+
+    Swal.fire({ title: "Guardado", text: "Predicción registrada con éxito", icon: "success", timer: 1500, showConfirmButton: false });
+  };
+
+  return (
+    <div className="fixture-container">
+      <div className="alert alert-info text-center shadow-sm" role="alert">
+        <h1 className="fixture-title">🌎 Prode {empresaData?.nombre || "Corporate"} - Mundial 2026 🏆</h1>
+      </div>
+
+      {/* --- SOLAPAS DE FASES ACTUALIZADAS --- */}
+      <Tabs
+        activeKey={faseActiva}
+        onSelect={(k) => setFaseActiva(k)}
+        className="mb-4 custom-tabs justify-content-center"
+      >
+        <Tab eventKey="grupos" title="Grupos" />
+        <Tab eventKey="dieciseisavos" title="Dieciseisavos" />
+        <Tab eventKey="octavos" title="Octavos" />
+        <Tab eventKey="cuartos" title="Cuartos" />
+        <Tab eventKey="semis" title="Semis" />
+        <Tab eventKey="finales" title="Finales" />
+      </Tabs>
+
+      {/* Layout principal */}
+      <div className="prode-layout">
+        
+        {/* Sección Partidos */}
+        <div className="fixture-grid">
+          {todosLosPartidos
+            .filter((partido) => {
+              if (faseActiva === "grupos") return !partido.fase; 
+              if (faseActiva === "semis") {
+                return partido.fase === "semis" && (partido.id === 101 || partido.id === 102);
+              }
+              if (faseActiva === "finales") {
+                return partido.fase === "semis" && (partido.id === 103 || partido.id === 104);
+              }
+              return partido.fase === faseActiva;
+            })
+            .map((partido) => {
+              const pred = predicciones[partido.id] || {};
+              const bloqueado = comprobacionBloqueo(partido.fechaLimite);
+
+              let encabezadoCard = `Grupo ${partido.grupo}`;
+              if (partido.fase) {
+                if (partido.id === 103) encabezadoCard = "TERCER PUESTO";
+                else if (partido.id === 104) encabezadoCard = "GRAN FINAL";
+                else encabezadoCard = partido.fase.toUpperCase();
+              }
+
+              return (
+                <Card className={`match-card ${bloqueado ? "partido-deshabilitado" : ""}`} key={partido.id}>
+                  <Card.Body className="p-2">
+                    <div className="match-header text-muted">
+                      <span>{encabezadoCard}</span>
+                      <span>📅 {partido.fecha}</span>
+                    </div>
+
+                    <div className="mt-2">
+                      {bloqueado ? (
+                        <Alert variant="danger" className="py-1 px-2 text-center small fw-bold m-0">
+                          🚫 Cerrado
+                        </Alert>
+                      ) : (
+                        <Alert variant="warning" className="py-1 px-2 text-center small m-0 text-dark">
+                          ⏳ Hasta: <strong>{formatearFechaTexto(partido.fechaLimite)}</strong>
+                        </Alert>
+                      )}
+                    </div>
+
+                    <div className="teams-container mt-2">
+                      <div className="team-box">
+                        <span className="fs-6">{partido.local}</span>
+                        <Form.Control
+                          type="number"
+                          min="0"
+                          disabled={bloqueado}
+                          value={pred.predLocal ?? ""}
+                          onChange={(e) => handleChange(partido.id, "predLocal", e.target.value)}
+                          className="text-center"
+                        />
+                      </div>
+
+                      <div className="vs text-muted">VS</div>
+
+                      <div className="team-box">
+                        <span className="fs-6">{partido.visitante}</span>
+                        <Form.Control
+                          type="number"
+                          min="0"
+                          disabled={bloqueado}
+                          value={pred.predVisitante ?? ""}
+                          onChange={(e) => handleChange(partido.id, "predVisitante", e.target.value)}
+                          className="text-center"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="text-center mt-3">
+                      <button
+                        className={`btn btn-sm fw-bold px-3 ${bloqueado ? "btn-secondary" : "btn-success"}`}
+                        disabled={bloqueado}
+                        onClick={() => guardar(partido)}
+                      >
+                        {bloqueado ? "Cerrado" : "Guardar"}
+                      </button>
+                    </div>
+                  </Card.Body>
+                </Card>
+              );
+            })}
+        </div>
+
+        {/* Sección Ranking (Fija a la derecha) */}
+        <aside className="ranking-section">
+          <div className="ranking-sticky">
+
+            {/* TABLA DE PREMIOS */}
+            <Card className="shadow-sm border-0 mb-3">
+              <Card.Header className="bg-success text-white text-center py-2">
+                <h5 className="m-0 fw-bold">💰 Pozo Corporativo Estimado</h5>
+                <h4 className="m-0 fw-bold mt-1">${POZO_TOTAL.toLocaleString('es-AR')}</h4>
+              </Card.Header>
+              <Card.Body className="p-0">
+                <Table hover className="m-0 align-middle text-center small">
+                  <thead className="table-light">
+                    <tr>
+                      <th>Puesto</th>
+                      <th>%</th>
+                      <th className="text-end px-3">Premio</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td className="fw-bold">🥇 1° Premio</td>
+                      <td>70%</td>
+                      <td className="text-end fw-bold text-success px-3">${(POZO_TOTAL * 0.7).toLocaleString('es-AR')}</td>
+                    </tr>
+                    <tr>
+                      <td>🥈 2° Premio</td>
+                      <td>20%</td>
+                      <td className="text-end fw-bold px-3">${(POZO_TOTAL * 0.2).toLocaleString('es-AR')}</td>
+                    </tr>
+                    <tr>
+                      <td>🥉 3° Premio</td>
+                      <td>10%</td>
+                      <td className="text-end fw-bold px-3">${(POZO_TOTAL * 0.1).toLocaleString('es-AR')}</td>
+                    </tr>
+                  </tbody>
+                </Table>
+              </Card.Body>
+            </Card>
+
+            {/* TABLA DE RANKING INTERNO */}
+            <Card className="shadow-sm border-0 mb-3">
+              <Card.Header className="bg-dark text-white text-center py-2">
+                <h5 className="m-0 fw-bold">🏆 Posiciones en {empresaData?.nombre || "la Empresa"}</h5>
+              </Card.Header>
+              <Card.Body className="p-0">
+                <Table hover responsive className="m-0 align-middle text-center small">
+                  <thead className="table-light">
+                    <tr>
+                      <th>#</th>
+                      <th className="text-start">Colaborador</th>
+                      <th>Pts</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ranking.map((user, index) => (
+                      <tr key={index} className={index === 0 ? "table-warning" : ""}>
+                        <td>{index === 0 ? "🥇" : index + 1}</td>
+                        <td className="text-start">{user.usuario} <span className="text-muted small">(Leg. {user.legajo})</span></td>
+                        <td><Badge bg="primary">{user.puntos}</Badge></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </Card.Body>
+            </Card>
+
+            {/* SECCIÓN DE REGLAS */}
+            <Card className="shadow-sm border-0 bg-light">
+              <Card.Header className="bg-secondary text-white text-center py-2">
+                <h5 className="m-0 fw-bold">📋 Reglas del Prode</h5>
+              </Card.Header>
+              <Card.Body className="p-3 text-dark style={{ fontSize: '0.85rem' }}">
+                <ul className="list-unstyled m-0 d-flex flex-column gap-2">
+                  <li>
+                    ⏳ <strong className="text-danger">Tiempo límite:</strong> Se pueden cargar o modificar pronósticos hasta <strong>1 día antes</strong> de que comience cada partido. Cumplido el plazo, el sistema bloqueará los casilleros.
+                  </li>
+                  <hr className="my-1 border-secondary-subtle" />
+                  <li>
+                    🎯 <strong>Sistema de Puntuación:</strong>
+                    <div className="ps-3 mt-1">
+                      • <Badge bg="success">4 Puntos</Badge> <strong>Acierto Exacto:</strong> Pegarle al resultado idéntico (Pleno).<br />
+                      • <Badge bg="primary">2 Puntos</Badge> <strong>Tendencia:</strong> Acertar el equipo ganador o el empate básico.<br />
+                      • <Badge bg="info" text="dark">+1 Punto Extra</Badge> <strong>Diferencia:</strong> Acertar la diferencia exacta de goles sin embocar el resultado numérico.<br />
+                      • <Badge bg="danger">0 Puntos</Badge> No acertar ninguna de las anteriores.
+                    </div>
+                  </li>
+                </ul>
+              </Card.Body>
+            </Card>
+
+          </div>
+        </aside>
+
+      </div>
+    </div>
+  );
+};

@@ -1,0 +1,393 @@
+// fixtureData2.js
+export const fixtureData2 = [
+  // ==========================================
+  // DIECISEISAVOS DE FINAL (Round of 32)
+  // ==========================================
+  {
+    id: 73,
+    fase: "dieciseisavos",
+    grupo: "F2",
+    fecha: "2026-06-24",
+    estadio: "SoFi Stadium",
+    local: "1A",
+    visitante: "3C/E/F/H/I",
+    golesLocal: null,
+    golesVisitante: null,
+  },
+  {
+    id: 74,
+    fase: "dieciseisavos",
+    grupo: "F2",
+    fecha: "2026-06-24",
+    estadio: "Gillette Stadium",
+    local: "1E",
+    visitante: "2A",
+    golesLocal: null,
+    golesVisitante: null,
+  },
+  {
+    id: 75,
+    fase: "dieciseisavos",
+    grupo: "F2",
+    fecha: "2026-06-25",
+    estadio: "MetLife Stadium",
+    local: "1I",
+    visitante: "3C/D/E/G/H",
+    golesLocal: null,
+    golesVisitante: null,
+  },
+  {
+    id: 76,
+    fase: "dieciseisavos",
+    grupo: "F2",
+    fecha: "2026-06-25",
+    estadio: "Mercedes-Benz Stadium",
+    local: "2E",
+    visitante: "2I",
+    golesLocal: null,
+    golesVisitante: null,
+  },
+  {
+    id: 77,
+    fase: "dieciseisavos",
+    grupo: "F2",
+    fecha: "2026-06-25",
+    estadio: "Estadio Azteca",
+    local: "1C",
+    visitante: "3F/G/I/J/K",
+    golesLocal: null,
+    golesVisitante: null,
+  },
+  {
+    id: 78,
+    fase: "dieciseisavos",
+    grupo: "F2",
+    fecha: "2026-06-26",
+    estadio: "Hard Rock Stadium",
+    local: "1G",
+    visitante: "2C",
+    golesLocal: null,
+    golesVisitante: null,
+  },
+  {
+    id: 79,
+    fase: "dieciseisavos",
+    grupo: "F2",
+    fecha: "2026-06-26",
+    estadio: "AT&T Stadium",
+    local: "1K",
+    visitante: "3B/C/D/E/I",
+    golesLocal: null,
+    golesVisitante: null,
+  },
+  {
+    id: 80,
+    fase: "dieciseisavos",
+    grupo: "F2",
+    fecha: "2026-06-26",
+    estadio: "Arrowhead Stadium",
+    local: "2G",
+    visitante: "2K",
+    golesLocal: null,
+    golesVisitante: null,
+  },
+  {
+    id: 81,
+    fase: "dieciseisavos",
+    grupo: "F2",
+    fecha: "2026-06-27",
+    estadio: "BC Place",
+    local: "1B",
+    visitante: "3E/H/I/J/K",
+    golesLocal: null,
+    golesVisitante: null,
+  },
+  {
+    id: 82,
+    fase: "dieciseisavos",
+    grupo: "F2",
+    fecha: "2026-06-27",
+    estadio: "Levi's Stadium",
+    local: "1F",
+    visitante: "2B",
+    golesLocal: null,
+    golesVisitante: null,
+  },
+  {
+    id: 83,
+    fase: "dieciseisavos",
+    grupo: "F2",
+    fecha: "2026-06-27",
+    estadio: "NRG Stadium",
+    local: "1J",
+    visitante: "3A/B/C/D/L",
+    golesLocal: null,
+    golesVisitante: null,
+  },
+  {
+    id: 84,
+    fase: "dieciseisavos",
+    grupo: "F2",
+    fecha: "2026-06-27",
+    estadio: "Lumen Field",
+    local: "2F",
+    visitante: "2J",
+    golesLocal: null,
+    golesVisitante: null,
+  },
+  {
+    id: 85,
+    fase: "dieciseisavos",
+    grupo: "F2",
+    fecha: "2026-06-28",
+    estadio: "Lincoln Financial Field",
+    local: "1D",
+    visitante: "3A/B/G/I/A",
+    golesLocal: null,
+    golesVisitante: null,
+  },
+  {
+    id: 86,
+    fase: "dieciseisavos",
+    grupo: "F2",
+    fecha: "2026-06-28",
+    estadio: "Hard Rock Stadium",
+    local: "1H",
+    visitante: "2D",
+    golesLocal: null,
+    golesVisitante: null,
+  },
+  {
+    id: 87,
+    fase: "dieciseisavos",
+    grupo: "F2",
+    fecha: "2026-06-28",
+    estadio: "AT&T Stadium",
+    local: "1L",
+    visitante: "3E/G/H/I/J",
+    golesLocal: null,
+    golesVisitante: null,
+  },
+  {
+    id: 88,
+    fase: "dieciseisavos",
+    grupo: "F2",
+    fecha: "2026-06-28",
+    estadio: "Estadio BBVA",
+    local: "2H",
+    visitante: "2L",
+    golesLocal: null,
+    golesVisitante: null,
+  },
+
+  // ==========================================
+  // OCTAVOS DE FINAL (Round of 16)
+  // ==========================================
+  {
+    id: 89,
+    fase: "octavos",
+    grupo: "F2",
+    fecha: "2026-06-29",
+    estadio: "Gillette Stadium",
+    local: "Ganador 73",
+    visitante: "Ganador 74",
+    golesLocal: null,
+    golesVisitante: null,
+  },
+  {
+    id: 90,
+    fase: "octavos",
+    grupo: "F2",
+    fecha: "2026-06-30",
+    estadio: "Mercedes-Benz Stadium",
+    local: "Ganador 75",
+    visitante: "Ganador 76",
+    golesLocal: null,
+    golesVisitante: null,
+  },
+  {
+    id: 91,
+    fase: "octavos",
+    grupo: "F2",
+    fecha: "2026-06-30",
+    estadio: "Estadio Azteca",
+    local: "Ganador 77",
+    visitante: "Ganador 78",
+    golesLocal: null,
+    golesVisitante: null,
+  },
+  {
+    id: 92,
+    fase: "octavos",
+    grupo: "F2",
+    fecha: "2026-07-01",
+    estadio: "Lumen Field",
+    local: "Ganador 79",
+    visitante: "Ganador 80",
+    golesLocal: null,
+    golesVisitante: null,
+  },
+  {
+    id: 93,
+    fase: "octavos",
+    grupo: "F2",
+    fecha: "2026-07-01",
+    estadio: "Hard Rock Stadium",
+    local: "Ganador 81",
+    visitante: "Ganador 82",
+    golesLocal: null,
+    golesVisitante: null,
+  },
+  {
+    id: 94,
+    fase: "octavos",
+    grupo: "F2",
+    fecha: "2026-07-02",
+    estadio: "MetLife Stadium",
+    local: "Ganador 83",
+    visitante: "Ganador 84",
+    golesLocal: null,
+    golesVisitante: null,
+  },
+  {
+    id: 95,
+    fase: "octavos",
+    grupo: "F2",
+    fecha: "2026-07-02",
+    estadio: "AT&T Stadium",
+    local: "Ganador 85",
+    visitante: "Ganador 86",
+    golesLocal: null,
+    golesVisitante: null,
+  },
+  {
+    id: 96,
+    fase: "octavos",
+    grupo: "F2",
+    fecha: "2026-07-03",
+    estadio: "BC Place",
+    local: "Ganador 87", // Corregido: antes apuntaba al 44
+    visitante: "Ganador 88", // Corregido: antes apuntaba al 46
+    golesLocal: null,
+    golesVisitante: null,
+  },
+
+  // ==========================================
+  // CUARTOS DE FINAL (Quarter-finals)
+  // ==========================================
+  {
+    id: 97,
+    fase: "cuartos",
+    grupo: "F2",
+    fecha: "2026-07-09",
+    estadio: "Gillette Stadium",
+    local: "Ganador 89",
+    visitante: "Ganador 90",
+    golesLocal: null,
+    golesVisitante: null,
+  },
+  {
+    id: 98,
+    fase: "cuartos",
+    grupo: "F2",
+    fecha: "2026-07-10",
+    estadio: "SoFi Stadium",
+    local: "Ganador 91",
+    visitante: "Ganador 92",
+    golesLocal: null,
+    golesVisitante: null,
+  },
+  {
+    id: 99,
+    fase: "cuartos",
+    grupo: "F2",
+    fecha: "2026-07-11",
+    estadio: "Hard Rock Stadium",
+    local: "Ganador 93",
+    visitante: "Ganador 94",
+    golesLocal: null,
+    golesVisitante: null,
+  },
+  {
+    id: 100,
+    fase: "cuartos",
+    grupo: "F2",
+    fecha: "2026-07-11",
+    estadio: "Kansas City Stadium",
+    local: "Ganador 95",
+    visitante: "Ganador 96",
+    golesLocal: null,
+    golesVisitante: null,
+  },
+
+  // ==========================================
+  // SEMIFINALES (Semi-finals)
+  // ==========================================
+  {
+    id: 101,
+    fase: "semis",
+    grupo: "F2",
+    fecha: "2026-07-14",
+    estadio: "AT&T Stadium",
+    local: "Ganador 97",
+    visitante: "Ganador 98",
+    golesLocal: null,
+    golesVisitante: null,
+  },
+  {
+    id: 102,
+    fase: "semis",
+    grupo: "F2",
+    fecha: "2026-07-15",
+    estadio: "Mercedes-Benz Stadium",
+    local: "Ganador 99",
+    visitante: "Ganador 100",
+    golesLocal: null,
+    golesVisitante: null,
+  },
+
+  // ==========================================
+  // TERCER PUESTO (Third place play-off)
+  // ==========================================
+  {
+    id: 103,
+    fase: "semis", // Agrupado acá para que aparezca en la última pestaña mapeada
+    grupo: "F2",
+    fecha: "2026-07-18",
+    estadio: "Hard Rock Stadium",
+    local: "Perdedor 101",
+    visitante: "Perdedor 102",
+    golesLocal: null,
+    golesVisitante: null,
+  },
+
+  // ==========================================
+  // GRAN FINAL (Final)
+  // ==========================================
+  {
+    id: 104,
+    fase: "semis", // Agrupado acá para que aparezca en la última pestaña mapeada
+    grupo: "F2",
+    fecha: "2026-07-19",
+    estadio: "MetLife Stadium",
+    local: "Ganador 101",
+    visitante: "Ganador 102",
+    golesLocal: null,
+    golesVisitante: null,
+  }
+];
+
+// Integración automática con tu script de límites de carga
+export const fixtureFase2ConLimite = fixtureData2.map(partido => {
+  const fechaPartido = new Date(`${partido.fecha}T00:00:00`);
+  fechaPartido.setDate(fechaPartido.getDate() - 1);
+  
+  const year = fechaPartido.getFullYear();
+  const month = String(fechaPartido.getMonth() + 1).padStart(2, '0');
+  const day = String(fechaPartido.getDate()).padStart(2, '0');
+  
+  return {
+    ...partido,
+    fechaLimite: `${year}-${month}-${day}`
+  };
+});

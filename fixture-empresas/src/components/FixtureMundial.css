@@ -1,0 +1,56 @@
+/* Layout principal: 1fr para los partidos (que será la grilla) y 350px fijos para el ranking */
+.prode-layout {
+  display: grid;
+  grid-template-columns: 1fr 350px; 
+  gap: 20px;
+  padding: 20px;
+}
+
+/* Grilla de partidos: Aquí definimos las 3 columnas */
+
+.fixture-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  align-items: start; /* <-- Esto evita que las cards se deformen verticalmente cuando son pocas */
+}
+
+@media (max-width: 992px) {
+  .fixture-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 576px) {
+  .fixture-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Asegurar que las tarjetas no sean demasiado altas */
+.match-card {
+  padding: 8px !important;
+  margin-bottom: 0 !important; /* Quitamos el margen inferior porque el grid ya tiene gap */
+}
+
+/* Responsividad: Si la pantalla es mediana, pasamos a 2 columnas, y en móvil a 1 */
+@media (max-width: 1200px) {
+  .fixture-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+  .prode-layout { grid-template-columns: 1fr; }
+  .fixture-grid { grid-template-columns: 1fr; }
+}
+.custom-tabs .nav-link {
+  color: #555;
+  font-weight: bold;
+  border: none !important;
+  font-size: 0.9rem;
+}
+
+.custom-tabs .nav-link.active {
+  color: #0d6efd !important;
+  border-bottom: 3px solid #0d6efd !important;
+  background-color: transparent !important;
+}

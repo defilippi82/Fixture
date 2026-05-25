@@ -1,9 +1,10 @@
 import React, { useContext, useEffect, useState } from "react";
-import { Card, Row, Col, Form, Table, Badge, Alert, Tabs, Tab } from "react-bootstrap"; 
+import { Card, Row, Col, Form, Table, Badge, Alert, Button, Tabs, Tab } from "react-bootstrap"; 
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db} from "../firebaseConfig/firebase"; 
 import "../css/FixtureMundial.css";
 import { UserContext } from "./context/UserContext.jsx";
+import { useNavigate } from "react-router-dom";
 import { fixtureConLimite } from "./fixtureData"; 
 import { fixtureFase2ConLimite } from "./fixtureData2"; 
 import { calcularPuntos } from "./puntosService";
@@ -160,6 +161,14 @@ export const FixtureMundial = () => {
 
     Swal.fire({ title: "Guardado", text: "Predicción registrada con éxito", icon: "success", timer: 1500, showConfirmButton: false });
   };
+  const cerrarSesion = () => {
+
+   localStorage.removeItem("userData");
+
+   setUserData(null);
+
+   navigate("/");
+};
 
   return (
     <div className="fixture-container">
@@ -212,8 +221,8 @@ export const FixtureMundial = () => {
                 <Card className={`match-card ${bloqueado ? "partido-deshabilitado" : ""}`} key={partido.id}>
                   <Card.Body className="p-2">
                     <div className="match-header text-muted">
-                      <span>{encabezadoCard}</span>
-                      <span>📅 {partido.fecha}</span>
+                      <Badge bg="success"><span>{encabezadoCard}</span></Badge>
+                      <Badge bg="info" text="dark"><span>📅 {partido.fecha}</span></Badge>
                     </div>
 
                     <div className="mt-2">
@@ -276,7 +285,9 @@ export const FixtureMundial = () => {
         {/* Sección Ranking (Fija a la derecha) */}
         <aside className="ranking-section">
           <div className="ranking-sticky">
-
+            <Button
+              variant="outline-info"
+              onClick={cerrarSesion}>Cerrar Sesión </Button>
             {/* TABLA DE PREMIOS */}
             <Card className="shadow-sm border-0 mb-3">
               <Card.Header className="bg-success text-white text-center py-2">

@@ -1,20 +1,27 @@
 /* Layout principal: 1fr para los partidos (que será la grilla) y 350px fijos para el ranking */
 .prode-layout {
-  display: grid;
-  grid-template-columns: 1fr 350px; 
-  gap: 20px;
-  padding: 20px;
-}
 
+  display: grid;
+
+  grid-template-columns:
+    1fr 320px;
+
+  gap: 15px;
+
+  align-items: start;
+}
 /* Grilla de partidos: Aquí definimos las 3 columnas */
-
 .fixture-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  align-items: start; /* <-- Esto evita que las cards se deformen verticalmente cuando son pocas */
-}
 
+  display: grid;
+
+  grid-template-columns:
+    repeat(auto-fit, minmax(320px, 1fr));
+
+  gap: 14px;
+
+  align-items: start;
+}
 @media (max-width: 992px) {
   .fixture-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -29,8 +36,35 @@
 
 /* Asegurar que las tarjetas no sean demasiado altas */
 .match-card {
-  padding: 8px !important;
-  margin-bottom: 0 !important; /* Quitamos el margen inferior porque el grid ya tiene gap */
+
+  background:
+    rgba(12, 24, 42, 0.95) !important;
+
+  border:
+    1px solid rgba(0,229,255,.12) !important;
+
+  border-radius: 16px !important;
+
+  overflow: hidden;
+
+  padding: 10px !important;
+
+  margin-bottom: 0 !important;
+
+  transition:
+    all .2s ease;
+
+  box-shadow:
+    0 4px 18px rgba(0,0,0,.35);
+}
+
+.match-card:hover {
+
+  transform:
+    translateY(-2px);
+
+  border:
+    1px solid rgba(0,229,255,.35) !important;
 }
 
 /* Responsividad: Si la pantalla es mediana, pasamos a 2 columnas, y en móvil a 1 */
@@ -79,23 +113,552 @@
 }
 
 .flag-icon {
-  width: 28px;
-  height: 20px;
+
+  width: 24px;
+
+  height: 18px;
+
   object-fit: cover;
+
   border-radius: 3px;
-  box-shadow: 0 0 3px rgba(0,0,0,0.3);
+
+  box-shadow:
+    0 0 4px rgba(0,0,0,.4);
 }
 
 .team-box input {
-  width: 70px;
+
+  width: 55px !important;
+
+  height: 45px;
+
   text-align: center;
-  font-size: 1.1rem;
-  font-weight: bold;
+
+  font-size: 1.2rem !important;
+
+  font-weight: 800 !important;
+
+  border-radius: 10px !important;
+
+  border:
+    1px solid rgba(0,229,255,.25) !important;
+
+  background:
+    rgba(0,0,0,.3) !important;
+
+  color: #00e5ff !important;
+
+  padding: 0 !important;
+
+  margin: auto;
+
+  transition: .2s;
+}
+
+.team-box input:focus {
+
+  border:
+    1px solid #00e5ff !important;
+
+  box-shadow:
+    0 0 10px rgba(0,229,255,.25) !important;
+
+  outline: none !important;
 }
 
 .vs {
-  font-weight: bold;
-  font-size: 1rem;
-  min-width: 40px;
+
+  font-size: .95rem;
+
+  font-weight: 800;
+
+  color: #00e5ff;
+
+  min-width: 25px;
+
   text-align: center;
+}
+/* =========================================
+   FIXTURE MUNDIAL 2026
+   ESTILO FIFA / ESPN / eFOOTBALL
+========================================= */
+.fixture-container {
+
+  min-height: 100vh;
+
+  padding: 15px;
+
+  background:
+    linear-gradient(
+      180deg,
+      #06101d 0%,
+      #09182c 100%
+    );
+
+  color: white;
+}
+/* =========================================
+   TITULO
+========================================= */
+.fixture-title {
+
+  font-size: 2rem;
+
+  font-weight: 800;
+
+  text-align: center;
+
+  margin-bottom: 20px;
+
+  color: #ffffff;
+
+  text-shadow:
+    0 0 10px rgba(0,229,255,.25);
+
+  letter-spacing: 1px;
+}
+
+/* =========================================
+   CARD PARTIDOS
+========================================= */
+
+.match-card {
+
+  background:
+    rgba(15, 31, 53, 0.75) !important;
+
+  backdrop-filter: blur(12px);
+
+  border:
+    1px solid rgba(0,229,255,.15) !important;
+
+  border-radius: 20px !important;
+
+  overflow: hidden;
+
+  margin-bottom: 25px;
+
+  transition:
+    transform .25s ease,
+    box-shadow .25s ease,
+    border .25s ease;
+
+  box-shadow:
+    0 10px 30px rgba(0,0,0,.35);
+}
+
+.match-card:hover {
+
+  transform:
+    translateY(-4px);
+
+  border:
+    1px solid rgba(0,229,255,.45) !important;
+
+  box-shadow:
+    0 0 20px rgba(0,229,255,.15),
+    0 10px 30px rgba(0,0,0,.45);
+}
+
+
+/* =========================================
+   HEADER PARTIDO
+========================================= */
+
+.match-header {
+
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: center;
+
+  padding-bottom: 8px;
+
+  margin-bottom: 10px;
+
+  border-bottom:
+    1px solid rgba(255,255,255,.06);
+
+  font-size: .8rem;
+
+  color: #8ecfff;
+
+  font-weight: 600;
+}
+
+/* =========================================
+   EQUIPOS
+========================================= */
+.teams-container {
+
+  display: grid;
+
+  grid-template-columns:
+    1fr auto 1fr;
+
+  align-items: center;
+
+  gap: 8px;
+}
+
+
+/* =========================================
+   BOX EQUIPO
+========================================= */
+
+.team-box {
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  justify-content: center;
+}
+.team-name {
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 6px;
+
+  margin-bottom: 6px;
+
+  min-height: 38px;
+
+  text-align: center;
+
+  font-size: .9rem;
+
+  font-weight: 700;
+
+  color: white;
+
+  line-height: 1.1;
+}
+
+.team-box span {
+
+  display: block;
+
+  margin-bottom: 14px;
+
+  font-size: 1.1rem;
+
+  font-weight: 700;
+
+  color: #ffffff;
+}
+
+
+/* =========================================
+   INPUTS RESULTADOS
+========================================= */
+
+.team-box input {
+
+  width: 90px !important;
+
+  height: 70px;
+
+  margin: auto;
+
+  text-align: center;
+
+  font-size: 2rem !important;
+
+  font-weight: 800 !important;
+
+  border-radius: 18px !important;
+
+  border:
+    2px solid rgba(0,229,255,.2) !important;
+
+  background:
+    rgba(0,0,0,.35) !important;
+
+  color: #00e5ff !important;
+
+  transition: all .2s ease;
+
+  box-shadow:
+    inset 0 0 10px rgba(0,229,255,.08);
+}
+
+.team-box input:focus {
+
+  border:
+    2px solid #00e5ff !important;
+
+  box-shadow:
+    0 0 15px rgba(0,229,255,.45) !important;
+
+  transform: scale(1.05);
+
+  outline: none !important;
+}
+
+
+/* =========================================
+   VS
+========================================= */
+
+.vs {
+
+  font-size: 1.4rem;
+
+  font-weight: 800;
+
+  color: #00e5ff;
+
+  text-shadow:
+    0 0 10px rgba(0,229,255,.5);
+}
+
+
+/* =========================================
+   RESULTADO REAL
+========================================= */
+
+.resultado-real {
+
+  margin-top: 12px;
+
+  padding: 8px;
+
+  border-radius: 10px;
+
+  background:
+    rgba(255,255,255,.04);
+
+  font-size: .82rem;
+
+  color: #b9d7ff;
+
+  text-align: center;
+}
+
+
+/* =========================================
+   PUNTOS
+========================================= */
+
+.puntos {
+
+  margin-top: 8px;
+
+  text-align: center;
+
+  font-size: .95rem;
+
+  font-weight: 700;
+
+  color: #00ff95;
+}
+
+
+/* =========================================
+   BOTON
+========================================= */
+
+.btn-primary {
+
+  width: 100%;
+
+  height: 42px;
+
+  border-radius: 10px !important;
+
+  border: none !important;
+
+  font-size: .9rem !important;
+
+  font-weight: 700 !important;
+
+  background:
+    linear-gradient(
+      90deg,
+      #009dff,
+      #00d9ff
+    ) !important;
+
+  transition: .2s;
+}
+
+.btn-primary:hover {
+
+  transform:
+    translateY(-1px);
+
+  box-shadow:
+    0 0 15px rgba(0,229,255,.25);
+}
+
+/* =========================================
+   RANKING
+========================================= */
+
+.table {
+
+  margin-top: 15px;
+
+  border-radius: 14px;
+
+  overflow: hidden;
+
+  background:
+    rgba(255,255,255,.03);
+
+  color: white !important;
+}
+
+.table thead {
+
+  background:
+    linear-gradient(
+      90deg,
+      #009dff,
+      #00d9ff
+    );
+
+  color: white;
+}
+
+.table th {
+
+  border: none !important;
+
+  text-align: center;
+}
+
+.table td {
+
+  border-color:
+    rgba(255,255,255,.08) !important;
+
+  vertical-align: middle;
+
+  text-align: center;
+}
+
+
+/* =========================================
+   TOP 3 RANKING
+========================================= */
+
+.table tbody tr:nth-child(1) {
+
+  background:
+    rgba(255,215,0,.15);
+
+  font-weight: 700;
+}
+
+.table tbody tr:nth-child(2) {
+
+  background:
+    rgba(192,192,192,.12);
+}
+
+.table tbody tr:nth-child(3) {
+
+  background:
+    rgba(205,127,50,.12);
+}
+
+
+/* =========================================
+   SCROLL
+========================================= */
+
+::-webkit-scrollbar {
+
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+
+  background: #07111f;
+}
+
+::-webkit-scrollbar-thumb {
+
+  background:
+    linear-gradient(
+      #009dff,
+      #00d9ff
+    );
+
+  border-radius: 20px;
+}
+
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+@media (max-width: 1200px) {
+
+  .fixture-grid {
+
+    grid-template-columns:
+      repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 992px) {
+
+  .prode-layout {
+
+    grid-template-columns:
+      1fr;
+  }
+
+  .fixture-grid {
+
+    grid-template-columns:
+      repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+
+  .fixture-grid {
+
+    grid-template-columns:
+      1fr;
+  }
+
+  .fixture-title {
+
+    font-size: 1.5rem;
+  }
+
+  .match-card {
+
+    padding: 8px !important;
+  }
+
+  .team-name {
+
+    font-size: .82rem;
+  }
+
+  .team-box input {
+
+    width: 50px !important;
+
+    height: 42px;
+
+    font-size: 1rem !important;
+  }
+
+  .btn-primary {
+
+    height: 40px;
+  }
 }

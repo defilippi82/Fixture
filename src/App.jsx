@@ -158,7 +158,7 @@ const AppContent = () => {
         <main style={{ marginBottom: '100px', marginTop: '80px', flex: '1 0 auto' }}>
           <Routes>
             {/* Control de Acceso / Login */}
-            <Route path="/" element={userData ? <Navigate to="/fixture" /> : <Login />} />
+            <Route path="/" element={userData ? <Login /> : <Navigate to="/fixture" />} />
             <Route path="/login" element={!userData ? <Login /> : <Navigate to="/fixture" />} />
 
             {/* Rutas Protegidas del Colaborador */}
@@ -168,7 +168,7 @@ const AppContent = () => {
 
             {/* Rutas Protegidas de Administración de la Empresa (Manager/RRHH) */}
             <Route path="/admin-dashboard" element={userData && userData.rol === "admin" ? <AdminEmpresaDashboard /> : <Navigate to="/login" />} />
-            <Route path="/colaboradores/create" element={userData && userData.rol === "admin" ? <RegistrarColaborador /> : <Navigate to="/login" />} />
+            {/*<Route path="/colaboradores/create" element={userData && userData.rol === "admin" ? <RegistrarColaborador /> : <Navigate to="/login" />} />*/}
 
             
             {/* Redirección por defecto */}

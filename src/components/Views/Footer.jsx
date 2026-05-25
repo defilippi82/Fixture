@@ -33,7 +33,7 @@ export const Footer = () => {
       </section>
       
     
-      <img className="rodapie" src="/logo-grisSin-fondo.png" width="75px" height="75px" alt="Logo"/>
+      <img className="rodapie" src="../../img/logo-grisSin-fondo.png" width="75px" height="75px" alt="Logo"/>
       <p className="eslogan">Navegá más allá de lo esperado </p>
       <p><em>Todos los derechos reservados.© 2024</em></p>
       <a href="#/privacidad" className="privacidad-link">Política de Privacidad</a>

@@ -1,10 +1,10 @@
 import React, { useContext, useEffect, useState } from "react";
 import { Container, Row, Col, Card, Table, Button, Form, Modal, Badge, Tabs, Tab } from "react-bootstrap";
 import { collection, getDocs, query, where, doc, updateDoc, deleteDoc } from "firebase/firestore";
-import { db } from "/src/firebaseConfig/firebase.js";
-import { UserContext } from "../Services/UserContext";
-import { fixtureConLimite } from "../Fixture/fixtureData";
-import { fixtureFase2ConLimite } from "../Fixture/fixtureData2";
+import { db } from "../../firebaseConfig/firebase.js";
+import { UserContext } from "../context/UserContext.jsx";
+import { fixtureConLimite } from "../../components/fixtureData";
+import { fixtureFase2ConLimite } from "../../components/fixtureData2";
 import Swal from "sweetalert2";
 
 const todosLosPartidos = [...fixtureConLimite, ...fixtureFase2ConLimite];

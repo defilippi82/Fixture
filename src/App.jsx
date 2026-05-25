@@ -1,29 +1,30 @@
 import React, { useEffect, useContext, useState } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { getToken, onMessage } from "firebase/messaging";
-import { messaging, auth } from './firebaseConfig/firebase.js'; 
 import { getFirestore, doc, setDoc } from "firebase/firestore";
+// Tus otros imports...
+import { db, auth, messaging } from './firebaseConfig/firebase'; // 👈 Agregalo acá
 
 // --- LIBRERÍA DE TUTORIAL ---
-import Joyride, { STATUS } from 'react-joyride';
+import {Joyride} from 'react-joyride';
 
 // --- CONTEXTO GLOBAL ---
-import { UserProvider, UserContext } from './components/Services/UserContext';
+import { UserProvider, UserContext } from './components/context/UserContext.jsx';
 
 // --- COMPONENTES DE VISTA COMUNES ---
-import { NavbarComponent } from './components/Views/Navbar.jsx';
+
 import { Footer } from './components/Views/Footer';
-import { Login } from "./components/Auth/Login"; // Tu login corporativo mutitenant
+import { Login } from "./components/Login.jsx";
 import { Privacidad } from "./components/Views/Privacidad";
 
 // --- COMPONENTES CORE DEL FIXTURE ---
-import { FixtureMundial } from "./components/Fixture/FixtureMundial.jsx";
-import { ReglasProde } from "./components/Fixture/ReglasProde.jsx";
+import { FixtureMundial } from "./components/FixtureMundial.jsx";
+//import { ReglasProde } from "./components/ReglasProde.jsx";
 
 // --- COMPONENTES DE ADMINISTRACIÓN (Empresas y SuperAdmin) ---
 import { AdminEmpresaDashboard } from "./components/Admin/AdminEmpresaDashboard.jsx";
-import { RegistrarColaborador } from "./components/Admin/RegistrarColaborador.jsx";
-import { GodPanel } from './components/Admin/GodPanel.jsx'; // Panel de control total
+//import { RegistrarColaborador } from "./components/Admin/RegistrarColaborador.jsx";
+//import { GodPanel } from './components/Admin/GodPanel.jsx'; // Panel de control total
 
 // --- ESTILOS ---
 import './css/App.css';
@@ -152,11 +153,7 @@ const AppContent = () => {
           }}
         />
 
-        {/* Navbar con control de cierre de sesión y reinicio de guía */}
-        <NavbarComponent 
-          handleLogout={handleLogout} 
-          startTutorial={() => setRunTutorial(true)} 
-        />
+        
 
         <main style={{ marginBottom: '100px', marginTop: '80px', flex: '1 0 auto' }}>
           <Routes>
@@ -166,16 +163,14 @@ const AppContent = () => {
 
             {/* Rutas Protegidas del Colaborador */}
             <Route path="/fixture" element={userData ? <FixtureMundial /> : <Navigate to="/login" />} />
-            <Route path="/reglas" element={userData ? <ReglasProde /> : <Navigate to="/login" />} />
+            {/*<Route path="/reglas" element={userData ? <ReglasProde /> : <Navigate to="/login" />} />*/}
             <Route path="/privacidad" element={userData ? <Privacidad /> : <Navigate to="/login" />} />
 
             {/* Rutas Protegidas de Administración de la Empresa (Manager/RRHH) */}
             <Route path="/admin-dashboard" element={userData && userData.rol === "admin" ? <AdminEmpresaDashboard /> : <Navigate to="/login" />} />
             <Route path="/colaboradores/create" element={userData && userData.rol === "admin" ? <RegistrarColaborador /> : <Navigate to="/login" />} />
 
-            {/* Ruta Exclusiva del Desarrollador / Panel de Control Global (GodMode) */}
-            <Route path="/god-panel" element={<GodPanel />} />
-
+            
             {/* Redirección por defecto */}
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>

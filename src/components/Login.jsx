@@ -1,96 +1,128 @@
-import React, { useState } from "react";
-import { Form, Button, Card, Container, Row, Col, Alert } from "react-bootstrap";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth, db } from "../firebaseConfig/firebase";
-import { doc, getDoc } from "firebase/firestore";
-import { useNavigate } from "react-router-dom";
-import Swal from "sweetalert2";
+import React, { useState } from 'react';
+import { Form, Button, Card, Container, Row, Col } from 'react-bootstrap';
+import { auth, db } from '../firebaseConfig/firebase';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
+import Swal from 'sweetalert2';
 
 export const Login = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const navigate = useNavigate();
+  // Estado para saber si muestra Login o Registro
+  const [isRegistering, setIsRegistering] = useState(false);
+  
+  // Estados para los campos del formulario
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [companyName, setCompanyName] = useState(''); // Solo para registro
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
+
+    if (!email || !password) {
+      Swal.fire('Error', 'Por favor, completá todos los campos.', 'error');
+      return;
+    }
 
     try {
-      // 1. Autenticar en Firebase Auth
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const uid = userCredential.user.uid;
+      if (isRegistering) {
+        // --- LÓGICA DE REGISTRO ---
+        if (!companyName) {
+          Swal.fire('Error', 'Por favor, ingresá el nombre de la empresa.', 'error');
+          return;
+        }
 
-      // 2. Verificar que exista en la colección de usuarios de Firestore
-      const userDoc = await getDoc(doc(db, "usuarios", uid));
+        // 1. Crear usuario en Firebase Auth
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        // 2. Guardar datos extendidos en Firestore (Colección "usuarios")
+        await setDoc(doc(db, 'usuarios', user.uid), {
+          uid: user.uid,
+          email: email,
+          empresa: companyName,
+          rol: 'user', // Por defecto rol común, después se puede cambiar a admin
+          createdAt: new Date().toISOString()
+        });
+
+        Swal.fire('¡Registro Exitoso!', 'Tu cuenta corporativa ha sido creada.', 'success');
+      } else {
+        // --- LÓGICA DE LOGIN ---
+        await signInWithEmailAndPassword(auth, email, password);
+        Swal.fire('¡Bienvenido!', 'Ingreso correcto.', 'success');
+      }
+    } catch (error) {
+      console.error(error);
+      let message = 'Ocurrió un error inesperado.';
+      if (error.code === 'auth/email-already-in-use') message = 'El email ya está registrado.';
+      if (error.code === 'auth/weak-password') message = 'La contraseña debe tener al menos 6 caracteres.';
+      if (error.code === 'auth/invalid-credential') message = 'Credenciales incorrectas.';
       
-      if (!userDoc.exists()) {
-        throw new Error("El usuario no está registrado en el sistema de empresas.");
-      }
-
-      const datosUsuario = userDoc.data();
-
-      // 3. Validar si la empresa asociada está activa
-      const empresaDoc = await getDoc(doc(db, "empresas", datosUsuario.empresaId));
-      if (!empresaDoc.exists() || !empresaDoc.data().activa) {
-        throw new Error("La empresa asociada a este usuario no se encuentra activa.");
-      }
-
-      Swal.fire({
-        title: `¡Bienvenido, ${datosUsuario.nombre}!`,
-        text: `Entrando al Prode de ${empresaDoc.data().nombre}`,
-        icon: "success",
-        timer: 2000,
-        showConfirmButton: false
-      });
-
-      navigate("/fixture"); // Redirecciona al fixture de pctmitre2
-
-    } catch (err) {
-      console.error(err);
-      setError(err.message || "Credenciales incorrectas. Intentalo de nuevo.");
+      Swal.fire('Error', message, 'error');
     }
   };
 
   return (
-    <Container className="d-flex align-items-center justify-content-center" style={{ minHeight: "100vh" }}>
-      <Row className="w-100 justify-content-center">
-        <Col md={6} lg={4}>
-          <Card className="shadow-lg border-0 rounded-4">
-            <Card.Body className="p-4">
-              <div className="text-center mb-4">
-                <h2 className="fw-bold text-primary">🏆 Prode Corporate</h2>
-                <p className="text-muted small">Ingresá con las credenciales de tu empresa</p>
-              </div>
-
-              {error && <Alert variant="danger" className="py-2 text-center small">{error}</Alert>}
-
+    <Container className="mt-5">
+      <Row className="justify-content-md-center">
+        <Col md={6}>
+          <Card className="shadow-sm p-4">
+            <Card.Body>
+              <h2 className="text-center mb-4">
+                {isRegistering ? 'Registro Corporativo' : 'Iniciar Sesión'}
+              </h2>
+              
               <Form onSubmit={handleSubmit}>
+                {isRegistering && (
+                  <Form.Group className="mb-3" controlId="formCompanyName">
+                    <Form.Label>Nombre de la Empresa</Form.Label>
+                    <Form.Control 
+                      type="text" 
+                      placeholder="Ej: Transportes S.A." 
+                      value={companyName}
+                      onChange={(e) => setCompanyName(e.target.value)}
+                    />
+                  </Form.Group>
+                )}
+
                 <Form.Group className="mb-3" controlId="formBasicEmail">
-                  <Form.Label className="small fw-semibold">Correo Corporativo</Form.Label>
-                  <Form.Control
-                    type="email"
-                    placeholder="nombre@empresa.com"
+                  <Form.Label>Email Corporativo</Form.Label>
+                  <Form.Control 
+                    type="email" 
+                    placeholder="usuario@empresa.com" 
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    required
                   />
                 </Form.Group>
 
-                <Form.Group className="mb-4" controlId="formBasicPassword">
-                  <Form.Label className="small fw-semibold">Contraseña</Form.Label>
-                  <Form.Control
-                    type="password"
-                    placeholder="••••••••"
+                <Form.Group className="mb-3" controlId="formBasicPassword">
+                  <Form.Label>Contraseña</Form.Label>
+                  <Form.Control 
+                    type="password" 
+                    placeholder="******" 
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    required
                   />
                 </Form.Group>
 
-                <Button variant="primary" type="submit" className="w-100 fw-bold py-2 rounded-3">
-                  Iniciar Sesión
+                <Button variant="primary" type="submit" className="w-100 mb-3">
+                  {isRegistering ? 'Crear Cuenta' : 'Ingresar'}
                 </Button>
+
+                <div className="text-center">
+                  <Button 
+                    variant="link" 
+                    onClick={() => {
+                      setIsRegistering(!isRegistering);
+                      // Limpiamos campos al cambiar de pantalla
+                      setEmail('');
+                      setPassword('');
+                      setCompanyName('');
+                    }}
+                  >
+                    {isRegistering 
+                      ? '¿Ya tenés cuenta? Iniciá sesión acá' 
+                      : '¿No tenés cuenta? Registrate acá'}
+                  </Button>
+                </div>
               </Form>
             </Card.Body>
           </Card>

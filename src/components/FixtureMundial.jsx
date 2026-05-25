@@ -1,14 +1,15 @@
 import React, { useContext, useEffect, useState } from "react";
 import { Card, Row, Col, Form, Table, Badge, Alert, Tabs, Tab } from "react-bootstrap"; 
 import { collection, getDocs, query, where } from "firebase/firestore";
-import { db } from "/src/firebaseConfig/firebase.js"; 
-import "./FixtureMundial.css";
-import { UserContext } from "./UserContext";
+import { db} from "../firebaseConfig/firebase"; 
+import "../css/FixtureMundial.css";
+import { UserContext } from "./context/UserContext.jsx";
 import { fixtureConLimite } from "./fixtureData"; 
 import { fixtureFase2ConLimite } from "./fixtureData2"; 
 import { calcularPuntos } from "./puntosService";
 import { guardarPrediccion, escucharRanking } from "./prodeService";
 import Swal from "sweetalert2";
+import { banderas } from "./banderas"; // Mapa de nombres de países a URLs de banderas
 
 const POZO_TOTAL = 100000;
 

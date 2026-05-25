@@ -1,10 +1,10 @@
 import React, { useContext, useEffect, useState } from "react";
+import { useNavigate, Link } from "react-router-dom"; // <-- Agregamos Link
 import { Card, Row, Col, Form, Table, Badge, Alert, Button, Tabs, Tab } from "react-bootstrap"; 
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db} from "../firebaseConfig/firebase"; 
 import "../css/FixtureMundial.css";
 import { UserContext } from "./context/UserContext.jsx";
-import { useNavigate } from "react-router-dom";
 import { fixtureConLimite } from "./fixtureData"; 
 import { fixtureFase2ConLimite } from "./fixtureData2"; 
 import { calcularPuntos } from "./puntosService";
@@ -18,11 +18,12 @@ const POZO_TOTAL = 100000;
 const todosLosPartidos = [...fixtureConLimite, ...fixtureFase2ConLimite];
 
 export const FixtureMundial = () => {
-  const { userData, empresaData } = useContext(UserContext); // Traemos la info de la empresa del contexto global
+  const { userData, empresaData, logout } = useContext(UserContext); // Traemos la info de la empresa del contexto global
   const [predicciones, setPredicciones] = useState({});
   const [ranking, setRanking] = useState([]);
   const [resultadosReales, setResultadosReales] = useState({}); 
   const [faseActiva, setFaseActiva] = useState("grupos");
+  const navigate = useNavigate();
   
   useEffect(() => {
     console.log("Datos corporativos en el fixture:", { userData, empresaData });
@@ -161,14 +162,14 @@ export const FixtureMundial = () => {
 
     Swal.fire({ title: "Guardado", text: "Predicción registrada con éxito", icon: "success", timer: 1500, showConfirmButton: false });
   };
-  const cerrarSesion = () => {
-
-   localStorage.removeItem("userData");
-
-   setUserData(null);
-
-   navigate("/");
-};
+  const cerrarSesion = async () => {
+      try {
+        await logout(); // Esto ejecuta el signOut(auth) de tu UserContext
+        navigate("/");
+      } catch (error) {
+        console.error("Error al cerrar sesión:", error);
+      }
+    };
 
   return (
     <div className="fixture-container">
@@ -254,8 +255,8 @@ export const FixtureMundial = () => {
                       <div className="vs text-muted">VS</div>
 
                       <div className="team-box">
-                        <span className="fs-6">{partido.visitante}</span>
                         <img src={banderas[partido.visitante]} alt={partido.visitante} className="flag-icon" />
+                        <span className="fs-6">{partido.visitante}</span>
                         <Form.Control
                           type="number"
                           min="0"

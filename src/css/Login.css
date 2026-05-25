@@ -1,0 +1,195 @@
+/* ========================================= */
+/* ENVOLTORIO PRINCIPAL                      */
+/* ========================================= */
+.login-wrapper {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(0, 229, 255, 0.15), transparent 25%),
+    radial-gradient(circle at bottom right, rgba(0, 153, 255, 0.12), transparent 25%),
+    linear-gradient(180deg, #06101d 0%, #081829 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* El padding y overflow aseguran que si el formulario de registro es muy largo en celular, se pueda scrollear sin que se corte arriba */
+  padding: 2rem 1rem;
+  overflow-y: auto; 
+}
+
+/* ========================================= */
+/* TARJETA DE LOGIN                          */
+/* ========================================= */
+.login-card {
+  background: rgba(10, 22, 40, 0.85) !important;
+  border: 1px solid rgba(0, 229, 255, 0.15) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px); /* Soporte para iOS/Safari */
+  border-radius: 24px !important;
+  padding: 2.5rem 2rem;
+  box-shadow:
+    0 0 30px rgba(0, 229, 255, 0.05),
+    0 15px 50px rgba(0, 0, 0, 0.5);
+  width: 100%;
+}
+
+/* ========================================= */
+/* TIPOGRAFÍA Y TÍTULOS                      */
+/* ========================================= */
+.login-card h2 {
+  color: white;
+  text-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
+  letter-spacing: -0.5px;
+}
+
+.login-card p.text-muted {
+  color: #8adfff !important;
+  font-size: 0.95rem;
+}
+
+/* ========================================= */
+/* ETIQUETAS (LABELS)                        */
+/* ========================================= */
+.form-label {
+  color: #cfe8ff;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 0.4rem;
+}
+
+/* ========================================= */
+/* INPUTS E ÍCONOS (INPUT GROUP)             */
+/* ========================================= */
+.input-group-text {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(0, 229, 255, 0.2) !important;
+  border-right: none !important; /* Hace que el ícono fluya directo hacia el input */
+  color: #00e5ff !important;
+  border-top-left-radius: 12px !important;
+  border-bottom-left-radius: 12px !important;
+}
+
+.form-control,
+.form-select {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(0, 229, 255, 0.2) !important;
+  border-left: none !important; /* Une visualmente el campo con el ícono */
+  color: white !important;
+  height: 50px;
+  border-top-right-radius: 12px !important;
+  border-bottom-right-radius: 12px !important;
+  transition: all 0.3s ease;
+  font-size: 0.95rem;
+}
+
+/* Ajuste por si usás un input sin el ícono de InputGroup al lado */
+.form-control:not(.input-group > .form-control),
+.form-select:not(.input-group > .form-select) {
+  border-left: 1px solid rgba(0, 229, 255, 0.2) !important;
+  border-radius: 12px !important;
+}
+
+/* ========================================= */
+/* ESTADOS DE FOCO (FOCUS) Y PLACEHOLDER     */
+/* ========================================= */
+.form-control:focus,
+.form-select:focus {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: #00e5ff !important;
+  box-shadow: inset 0 0 0 1px #00e5ff, 0 0 15px rgba(0, 229, 255, 0.15) !important;
+  outline: none;
+}
+
+/* Truco: ilumina el borde del ícono cuando hacés clic en el texto */
+.form-control:focus ~ .input-group-text,
+.input-group:focus-within .input-group-text {
+  border-color: #00e5ff !important;
+  background: rgba(0, 229, 255, 0.1) !important;
+  box-shadow: inset 0 0 0 1px #00e5ff;
+}
+
+.form-control::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.9rem;
+}
+
+.form-select option {
+  background: #081829;
+  color: white;
+}
+
+/* ========================================= */
+/* CHECKBOX DE NUEVA EMPRESA                 */
+/* ========================================= */
+.form-check-input {
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(0, 229, 255, 0.4);
+}
+
+.form-check-input:checked {
+  background-color: #00e5ff;
+  border-color: #00e5ff;
+}
+
+.form-check-label {
+  color: #cfe8ff !important;
+  cursor: pointer;
+}
+
+/* ========================================= */
+/* BOTÓN PRINCIPAL DE ACCIÓN                 */
+/* ========================================= */
+.btn.btn-dark {
+  /* Al tener "btn-dark" en tu JSX, sobreescribimos acá para mantener tu gradiente neón */
+  height: 52px;
+  border: none !important;
+  border-radius: 12px !important;
+  font-size: 1.05rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.5px;
+  background: linear-gradient(90deg, #009dff, #00d9ff) !important;
+  color: #04101e !important; /* Texto oscuro resalta mucho mejor sobre cyan */
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 157, 255, 0.3);
+}
+
+.btn.btn-dark:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 229, 255, 0.4);
+  filter: brightness(1.1);
+}
+
+.btn.btn-dark:disabled {
+  opacity: 0.7;
+  transform: none;
+}
+
+/* ========================================= */
+/* RESPONSIVE DESIGN (MÓVILES)               */
+/* ========================================= */
+@media (max-width: 768px) {
+  .login-wrapper {
+    /* Alineación superior para que se pueda scrollear todo el form de registro en pantallas chicas */
+    align-items: flex-start; 
+    padding: 1.5rem 1rem;
+  }
+
+  .login-card {
+    padding: 1.5rem 1.25rem;
+    border-radius: 20px !important;
+  }
+
+  .login-card h2 {
+    font-size: 1.5rem;
+  }
+
+  .form-control,
+  .form-select,
+  .input-group-text {
+    height: 46px;
+    font-size: 0.9rem;
+  }
+
+  .btn.btn-dark {
+    height: 48px;
+    font-size: 1rem !important;
+  }
+}

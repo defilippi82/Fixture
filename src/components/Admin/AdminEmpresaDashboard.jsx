@@ -1,6 +1,7 @@
 import React, { useContext, useEffect, useState } from "react";
 import { Container, Row, Col, Card, Table, Button, Form, Modal, Badge, Tabs, Tab } from "react-bootstrap";
-import { collection, getDocs, query, where, doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { collection, getDocs, query, where, doc, updateDoc, deleteDoc, setDoc } from "firebase/firestore";
+import { useNavigate } from "react-router-dom"; 
 import { db } from "../../firebaseConfig/firebase.js";
 import { UserContext } from "../context/UserContext.jsx";
 import { fixtureConLimite } from "../../components/fixtureData";
@@ -10,34 +11,80 @@ import Swal from "sweetalert2";
 const todosLosPartidos = [...fixtureConLimite, ...fixtureFase2ConLimite];
 
 export const AdminEmpresaDashboard = () => {
-  const { userData, empresaData } = useContext(UserContext);
+  const { userData } = useContext(UserContext);
+  const navigate = useNavigate();
+
   const [usuarios, setUsuarios] = useState([]);
+  const [empresas, setEmpresas] = useState([]); 
+  const [empresaFiltro, setEmpresaFiltro] = useState(""); 
+  
   const [partidosManuales, setPartidosManuales] = useState(todosLosPartidos);
   
   // Estados para Modal de Edición de Usuario
   const [showEditModal, setShowEditModal] = useState(false);
   const [usuarioSeleccionado, setUsuarioSeleccionado] = useState(null);
 
+  // ==========================================
+  // 1. VALIDACIÓN SUPER ADMIN EXCLUSIVA
+  // ==========================================
   useEffect(() => {
-    if (userData?.empresaId) {
-      cargarUsuariosEmpresa();
+    // Si ya cargó la data del usuario y no es tu correo, lo sacamos
+    if (userData && userData.email !== "f.defilippi@gmail.com") {
+      Swal.fire("Acceso Denegado", "No tenés permisos de Super Administrador para ver esta sección.", "error");
+      navigate("/fixture");
+    }
+  }, [userData, navigate]);
+
+  // ==========================================
+  // 2. CARGAR TODAS LAS EMPRESAS (Para el filtro)
+  // ==========================================
+  useEffect(() => {
+    const cargarEmpresas = async () => {
+      try {
+        const snapshot = await getDocs(collection(db, "empresas"));
+        const listaEmpresas = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        setEmpresas(listaEmpresas);
+      } catch (error) {
+        console.error("Error al cargar las empresas:", error);
+      }
+    };
+
+    if (userData?.email === "f.defilippi@gmail.com") {
+      cargarEmpresas();
     }
   }, [userData]);
 
   // ==========================================
-  // LÓGICA DEL CRUD DE USUARIOS
+  // 3. CARGAR USUARIOS (Filtrados o todos)
   // ==========================================
-  const cargarUsuariosEmpresa = async () => {
+  useEffect(() => {
+    if (userData?.email === "f.defilippi@gmail.com") {
+      cargarUsuariosSuperAdmin();
+    }
+  }, [empresaFiltro, userData]);
+
+  const cargarUsuariosSuperAdmin = async () => {
     try {
-      const q = query(collection(db, "usuarios"), where("empresaId", "==", userData.empresaId));
+      let q;
+      if (empresaFiltro === "") {
+        // Trae TODOS los usuarios de la base de datos
+        q = collection(db, "usuarios");
+      } else {
+        // Trae solo los de la empresa seleccionada en el combo
+        q = query(collection(db, "usuarios"), where("empresaId", "==", empresaFiltro));
+      }
+      
       const snapshot = await getDocs(q);
       const listaUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setUsuarios(listaUsers);
     } catch (error) {
-      console.error("Error al cargar usuarios de la empresa:", error);
+      console.error("Error al cargar usuarios globales:", error);
     }
   };
 
+  // ==========================================
+  // LÓGICA DEL CRUD DE USUARIOS
+  // ==========================================
   const abrirEditarUsuario = (user) => {
     setUsuarioSeleccionado({ ...user });
     setShowEditModal(true);
@@ -58,7 +105,7 @@ export const AdminEmpresaDashboard = () => {
       
       Swal.fire("Actualizado", "Colaborador modificado con éxito.", "success");
       setShowEditModal(false);
-      cargarUsuariosEmpresa();
+      cargarUsuariosSuperAdmin();
     } catch (error) {
       Swal.fire("Error", "No se pudo actualizar el usuario.", "error");
     }
@@ -67,7 +114,7 @@ export const AdminEmpresaDashboard = () => {
   const handleEliminarUsuario = async (userId, nombre) => {
     Swal.fire({
       title: `¿Eliminar a ${nombre}?`,
-      text: "Esta acción revocará su acceso al Prode de la empresa.",
+      text: "Esta acción revocará su acceso a la plataforma.",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#d33",
@@ -79,7 +126,7 @@ export const AdminEmpresaDashboard = () => {
         try {
           await deleteDoc(doc(db, "usuarios", userId));
           Swal.fire("Eliminado", "El usuario fue removido del sistema.", "success");
-          cargarUsuariosEmpresa();
+          cargarUsuariosSuperAdmin();
         } catch (error) {
           Swal.fire("Error", "No se pudo eliminar al usuario.", "error");
         }
@@ -103,9 +150,11 @@ export const AdminEmpresaDashboard = () => {
     }
 
     try {
-      // 1. Guardar el resultado real en la colección global de partidos de control
+      // Usamos el ID del partido como key del documento
       const partidoRef = doc(db, "resultados_oficiales", String(partido.id));
-      await updateDoc(partidoref, {
+      
+      // Utilizamos setDoc con merge: true para crear el documento si no existe, o actualizar si existe.
+      await setDoc(partidoRef, {
         golesLocalOficial: partido.golesLocal,
         golesVisitanteOficial: partido.golesVisitante,
         estado: "Finalizado"
@@ -119,33 +168,59 @@ export const AdminEmpresaDashboard = () => {
         showConfirmButton: false
       });
     } catch (error) {
-      // Si el documento no existe inicialmente, usamos un setDoc o update según tu backend
       console.error("Error al forzar resultado:", error);
-      Swal.fire("Error", "Asegurate de tener los permisos o la colección creada en Firestore.", "error");
+      Swal.fire("Error", "No se pudo guardar el resultado oficial en la base de datos.", "error");
     }
   };
 
+  // Si no sos vos, no renderiza la UI (evita parpadeos antes del redireccionamiento)
+  if (userData?.email !== "f.defilippi@gmail.com") return null;
+
   return (
     <Container fluid className="py-4">
-      <div className="d-flex justify-content-between align-items-center mb-4 bg-dark text-white p-3 rounded-3 shadow-sm">
+      <div className="d-flex justify-content-between align-items-center mb-4 bg-danger text-white p-3 rounded-3 shadow-sm">
         <div>
-          <h2 className="m-0 fw-bold">⚙️ Panel Admin: {empresaData?.nombre || "Cargando..."}</h2>
-          <small className="text-muted">Gestión de personal y contingencia de resultados</small>
+          <h2 className="m-0 fw-bold">👑 SUPER ADMIN GLOBAL</h2>
+          <small>Acceso exclusivo autorizado para: f.defilippi@gmail.com</small>
         </div>
-        <Badge bg="danger" className="p-2 fs-6">Modo Administrador</Badge>
+        <Badge bg="dark" className="p-2 fs-6">God Mode</Badge>
       </div>
 
       <Tabs defaultActiveKey="usuarios" className="mb-4 custom-tabs" fill>
-        {/* PESTAÑA CRUD USUARIOS */}
-        <Tab eventKey="usuarios" title="👥 Control de Colaboradores">
+        {/* PESTAÑA CRUD USUARIOS MULTI-EMPRESA */}
+        <Tab eventKey="usuarios" title="👥 Control de Colaboradores Global">
+          <Card className="shadow-sm border-0 mb-3">
+            <Card.Body className="bg-light">
+              <Row className="align-items-center">
+                <Col md={4}>
+                  <h6 className="m-0 fw-bold">Filtrar por Empresa:</h6>
+                </Col>
+                <Col md={8}>
+                  <Form.Select 
+                    value={empresaFiltro} 
+                    onChange={(e) => setEmpresaFiltro(e.target.value)}
+                  >
+                    <option value="">🌎 VER TODAS LAS EMPRESAS</option>
+                    {empresas.map((emp) => (
+                      <option key={emp.id} value={emp.id}>
+                        {emp.nombre}
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Col>
+              </Row>
+            </Card.Body>
+          </Card>
+
           <Card className="shadow-sm border-0">
             <Card.Body>
               <Table responsive hover align="middle" className="text-center m-0">
-                <thead className="table-secondary">
+                <thead className="table-dark">
                   <tr>
+                    <th>Empresa</th>
                     <th>Legajo</th>
                     <th className="text-start">Nombre Completo</th>
-                    <th className="text-start">Email Corporativo</th>
+                    <th className="text-start">Email</th>
                     <th>Rol</th>
                     <th>Acciones</th>
                   </tr>
@@ -153,12 +228,17 @@ export const AdminEmpresaDashboard = () => {
                 <tbody>
                   {usuarios.map((u) => (
                     <tr key={u.id}>
+                      <td className="text-muted small fw-bold">
+                        {u.empresaNombre || "N/A"}
+                      </td>
                       <td className="fw-bold">{u.legajo}</td>
                       <td className="text-start">{u.nombre}</td>
                       <td className="text-start text-muted">{u.email}</td>
                       <td>
-                        <Badge bg={u.rol === "admin" ? "danger" : "primary"}>
-                          {u.rol?.toUpperCase() || "EMPLEADO"}
+                        <Badge bg={(Array.isArray(u.rol) ? u.rol.includes("admin") : u.rol === "admin") ? "danger" : "primary"}>
+                          {Array.isArray(u.rol) 
+                            ? u.rol.join(" / ").toUpperCase() 
+                            : (u.rol?.toUpperCase() || "EMPLEADO")}
                         </Badge>
                       </td>
                       <td>
@@ -171,6 +251,11 @@ export const AdminEmpresaDashboard = () => {
                       </td>
                     </tr>
                   ))}
+                  {usuarios.length === 0 && (
+                    <tr>
+                      <td colSpan="6" className="py-4 text-muted">No se encontraron usuarios para esta selección.</td>
+                    </tr>
+                  )}
                 </tbody>
               </Table>
             </Card.Body>
@@ -178,10 +263,10 @@ export const AdminEmpresaDashboard = () => {
         </Tab>
 
         {/* PESTAÑA CONTINGENCIA API */}
-        <Tab eventKey="contingencia" title="🚨 Carga Contingencia Resultados (No API)">
+        <Tab eventKey="contingencia" title="🚨 Carga Contingencia Resultados Oficiales">
           <Card className="shadow-sm border-0">
             <Card.Header className="bg-warning text-dark fw-bold">
-              ⚠️ Usar solo si la API internacional de OpenFootball no responde o tiene demoras en actualizar.
+              ⚠️ Panel Maestro: Los resultados cargados aquí afectarán el puntaje de TODAS las empresas.
             </Card.Header>
             <Card.Body>
               <div className="admin-contingencia-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '15px' }}>
@@ -275,7 +360,7 @@ export const AdminEmpresaDashboard = () => {
                   onChange={(e) => setUsuarioSeleccionado({ ...usuarioSeleccionado, rol: e.target.value })}
                 >
                   <option value="user">Empleado (Solo Pronosticar)</option>
-                  <option value="admin">Administrador (Acceso Total)</option>
+                  <option value="admin">Administrador (Puede ver Dashboard empresa)</option>
                 </Form.Select>
               </Form.Group>
             </Form>

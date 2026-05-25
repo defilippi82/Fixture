@@ -1,4 +1,20 @@
+/* App.css */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body, html, #root {
+  width: 100%;
+  min-height: 100vh;
+  background-color: #06101d; /* El mismo color de fondo que tu Login */
+  color: white;
+  margin: 0;
+  padding: 0;
+}
 .counter {
+  
   font-size: 16px;
   padding: 5px 10px;
   border-radius: 5px;

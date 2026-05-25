@@ -1,713 +1,378 @@
 import React, { useEffect, useState } from "react";
-
-import {  Form, Button, Card, Container, Row, Col, InputGroup, Spinner,} from "react-bootstrap";
+import { Form, Button, Card, Container, Row, Col, InputGroup, Spinner } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-
-import {  signInWithEmailAndPassword,  createUserWithEmailAndPassword,  signOut,} from "firebase/auth";
-
-import {  collection,  getDocs,  doc,  setDoc,  addDoc,  query,  where,} from "firebase/firestore";
-
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
+import { collection, getDocs, doc, setDoc } from "firebase/firestore";
 import { auth, db } from "../firebaseConfig/firebase";
-
 import Swal from "sweetalert2";
-
-import {  FaEnvelope,  FaLock,  FaBuilding,} from "react-icons/fa";
-
-import "./Login.css";
+import { FaEnvelope, FaLock, FaBuilding, FaUser, FaIdCard } from "react-icons/fa";
+import "../css/Login.css";
 
 export const Login = () => {
-
   // =========================================
   // STATES
   // =========================================
-
   const [isRegistering, setIsRegistering] = useState(false);
-
   const [empresas, setEmpresas] = useState([]);
-
-  const [empresaId, setEmpresaId] =    useState("");
-
-  const [nuevaEmpresa, setNuevaEmpresa] =    useState(false);
-
-  const [nombreEmpresa, setNombreEmpresa] =    useState("");
+  const [empresaId, setEmpresaId] = useState("");
+  const [nuevaEmpresa, setNuevaEmpresa] = useState(false);
+  const [nombreEmpresa, setNombreEmpresa] = useState("");
+  
+  // Nuevos estados para el perfil del colaborador
+  const [nombre, setNombre] = useState("");
+  const [apellido, setApellido] = useState("");
+  const [legajo, setLegajo] = useState("");
 
   const [email, setEmail] = useState("");
-
-  const [password, setPassword] =    useState("");
-
-  const [confirmPassword, setConfirmPassword] =    useState("");
-
-  const [loading, setLoading] =    useState(false);
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   // =========================================
   // CARGAR EMPRESAS
   // =========================================
-
-  useEffect(() => {   obtenerEmpresas();
+  useEffect(() => {
+    obtenerEmpresas();
   }, []);
 
   const obtenerEmpresas = async () => {
-
     try {
-
-      const empresasRef =
-        collection(db, "empresas");
-
-      const snapshot =
-        await getDocs(empresasRef);
-
-      const empresasData =
-        snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-
-      setEmpresas(empresasData);
-
+      const querySnapshot = await getDocs(collection(db, "empresas"));
+      const lista = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setEmpresas(lista);
     } catch (error) {
-
-      console.error(error);
-
-      Swal.fire(
-        "Error",
-        "No se pudieron cargar las empresas.",
-        "error"
-      );
+      console.error("Error al traer empresas:", error);
     }
   };
 
   // =========================================
-  // SUBMIT
+  // SUBMIT HANDLER (LOGIN / REGISTRO)
   // =========================================
-
   const handleSubmit = async (e) => {
-
     e.preventDefault();
-
-    // =========================================
-    // VALIDACIONES
-    // =========================================
-
     if (!email || !password) {
-
-      Swal.fire(
-        "Campos incompletos",
-        "Completá todos los campos.",
-        "warning"
-      );
-
+      Swal.fire("Error", "Por favor completa los campos básicos.", "error");
       return;
     }
 
-    // =========================================
-    // REGISTRO
-    // =========================================
+    setLoading(true);
 
     if (isRegistering) {
-
-      if (
-        !empresaId &&
-        !nuevaEmpresa
-      ) {
-
-        Swal.fire(
-          "Error",
-          "Seleccioná una empresa.",
-          "error"
-        );
-
+      // -------------------------------------
+      // VALIDACIONES DE REGISTRO
+      // -------------------------------------
+      if (!nombre.trim() || !apellido.trim() || !legajo.trim()) {
+        Swal.fire("Error", "Nombre, Apellido y Legajo son obligatorios.", "error");
+        setLoading(false);
+        return;
+      }
+      if (password !== confirmPassword) {
+        Swal.fire("Error", "Las contraseñas no coinciden.", "error");
+        setLoading(false);
+        return;
+      }
+      if (nuevaEmpresa && !nombreEmpresa.trim()) {
+        Swal.fire("Error", "Falta el nombre de la nueva empresa.", "error");
+        setLoading(false);
+        return;
+      }
+      if (!nuevaEmpresa && !empresaId) {
+        Swal.fire("Error", "Selecciona una empresa corporativa.", "error");
+        setLoading(false);
         return;
       }
 
-      if (
-        nuevaEmpresa &&
-        !nombreEmpresa
-      ) {
+      try {
+        let finalEmpresaId = empresaId;
+        let finalEmpresaNombre = "";
 
-        Swal.fire(
-          "Error",
-          "Ingresá el nombre de la empresa.",
-          "error"
-        );
-
-        return;
-      }
-
-      if (
-        password !== confirmPassword
-      ) {
-
-        Swal.fire(
-          "Error",
-          "Las contraseñas no coinciden.",
-          "error"
-        );
-
-        return;
-      }
-
-      if (password.length < 6) {
-
-        Swal.fire(
-          "Error",
-          "La contraseña debe tener mínimo 6 caracteres.",
-          "error"
-        );
-
-        return;
-      }
-    }
-
-    try {
-
-      setLoading(true);
-
-      // =========================================
-      // LOGIN
-      // =========================================
-
-      if (!isRegistering) {
-
-        if (!empresaId) {
-
-          Swal.fire(
-            "Error",
-            "Seleccioná una empresa.",
-            "error"
-          );
-
-          return;
+        // Si es una empresa nueva, primero la creamos en Firestore
+        if (nuevaEmpresa) {
+          const nuevaEmpresaRef = doc(collection(db, "empresas"));
+          finalEmpresaId = nuevaEmpresaRef.id;
+          finalEmpresaNombre = nombreEmpresa.trim();
+          await setDoc(nuevaEmpresaRef, { nombre: finalEmpresaNombre });
+        } else {
+          const empSeleccionada = empresas.find((e) => e.id === empresaId);
+          finalEmpresaNombre = empSeleccionada ? empSeleccionada.nombre : "Corporativo";
         }
 
-        const userCredential =
-          await signInWithEmailAndPassword(
-            auth,
-            email,
-            password
-          );
+        // Crear el usuario en Firebase Authentication
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
 
-        const firebaseUser =
-          userCredential.user;
+        // Unificamos Nombre y Apellido en un solo string
+        const nombreCompleto = `${nombre.trim()} ${apellido.trim()}`;
 
-        // Buscar usuario Firestore
+        // Guardar el perfil completo del colaborador en Firestore usando su UID como ID del documento
+        await setDoc(doc(db, "usuarios", user.uid), {
+          nombre: nombreCompleto,
+          legajo: legajo.trim(),
+          email: user.email,
+          empresaId: finalEmpresaId,
+          empresaNombre: finalEmpresaNombre,
+          rol: "user", // Rol por defecto (Empleado)
+          createdAt: new Date()
+        });
 
-        const userQuery = query(
-          collection(db, "usuarios"),
-          where(
-            "uid",
-            "==",
-            firebaseUser.uid
-          )
-        );
-
-        const userSnapshot =
-          await getDocs(userQuery);
-
-        if (userSnapshot.empty) {
-
-          await signOut(auth);
-
-          Swal.fire(
-            "Error",
-            "Usuario no encontrado.",
-            "error"
-          );
-
-          return;
-        }
-
-        const usuario =
-          userSnapshot.docs[0].data();
-
-        // Validar empresa
-
-        if (
-          usuario.empresaId !==
-          empresaId
-        ) {
-
-          await signOut(auth);
-
-          Swal.fire(
-            "Empresa incorrecta",
-            "El usuario no pertenece a la empresa seleccionada.",
-            "error"
-          );
-
-          return;
-        }
-
-          Swal.fire({
-            icon: "success",
-            title: "Bienvenido",
-            text: "Ingreso exitoso",
-            timer: 1500,
-            showConfirmButton: false,
-          });
-
+        setLoading(false);
+        
+        Swal.fire({
+          title: "¡Cuenta Creada!",
+          text: `Bienvenido/a al Prode Corporativo, ${nombreCompleto}.`,
+          icon: "success",
+          confirmButtonText: "Ir al Fixture"
+        }).then(() => {
+          // El usuario ya queda autenticado por Firebase, lo enviamos directo al Prode
           navigate("/fixture");
+        });
 
-        return;
-      }
-
-      // =========================================
-      // REGISTRO
-      // =========================================
-
-      let empresaFinalId = empresaId;
-
-      let empresaNombreFinal = "";
-
-      // =========================================
-      // CREAR NUEVA EMPRESA
-      // =========================================
-
-      if (nuevaEmpresa) {
-
-        const empresaRef =
-          await addDoc(
-            collection(db, "empresas"),
-            {
-              nombre: nombreEmpresa,
-              activa: true,
-              createdAt:
-                new Date().toISOString(),
-            }
-          );
-
-        empresaFinalId = empresaRef.id;
-
-        empresaNombreFinal =
-          nombreEmpresa;
-
-      } else {
-
-        const empresaSeleccionada =
-          empresas.find(
-            (e) => e.id === empresaId
-          );
-
-        empresaNombreFinal =
-          empresaSeleccionada?.nombre ||
-          "";
-      }
-
-      // =========================================
-      // CREAR USUARIO AUTH
-      // =========================================
-
-      const userCredential =
-        await createUserWithEmailAndPassword(
-          auth,
-          email,
-          password
-        );
-
-      const firebaseUser =
-        userCredential.user;
-
-      // =========================================
-      // GUARDAR FIRESTORE
-      // =========================================
-
-      await setDoc(
-        doc(
-          db,
-          "usuarios",
-          firebaseUser.uid
-        ),
-        {
-          uid: firebaseUser.uid,
-
-          email,
-
-          empresaId: empresaFinalId,
-
-          empresaNombre:
-            empresaNombreFinal,
-
-          rol: "usuario",
-
-          activo: true,
-
-          createdAt:
-            new Date().toISOString(),
+      } catch (error) {
+        setLoading(false);
+        console.error("Error en registro:", error);
+        let mensajeError = "No se pudo crear la cuenta.";
+        if (error.code === "auth/email-already-in-use") {
+          mensajeError = "Este correo electrónico ya está registrado.";
+        } else if (error.code === "auth/weak-password") {
+          mensajeError = "La contraseña debe tener al menos 6 caracteres.";
         }
-      );
-
-      // =========================================
-      // RECARGAR EMPRESAS
-      // =========================================
-
-      await obtenerEmpresas();
-
-      Swal.fire({
-        icon: "success",
-        title: "Registro exitoso",
-        text: "La cuenta fue creada correctamente.",
-      });
-
-      // =========================================
-      // LIMPIAR
-      // =========================================
-
-      setEmail("");
-
-      setPassword("");
-
-      setConfirmPassword("");
-
-      setEmpresaId("");
-
-      setNombreEmpresa("");
-
-      setNuevaEmpresa(false);
-
-      setIsRegistering(false);
-
-    } catch (error) {
-
-      console.error(error);
-
-      let mensaje =
-        "Ocurrió un error.";
-
-      if (
-        error.code ===
-        "auth/email-already-in-use"
-      ) {
-
-        mensaje =
-          "El email ya está registrado.";
+        Swal.fire("Error", mensajeError, "error");
       }
 
-      if (
-        error.code ===
-        "auth/invalid-credential"
-      ) {
-
-        mensaje =
-          "Credenciales incorrectas.";
+    } else {
+      // -------------------------------------
+      // LÓGICA DE LOGIN TRADICIONAL
+      // -------------------------------------
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        setLoading(false);
+        navigate("/fixture");
+      } catch (error) {
+        setLoading(false);
+        console.error("Error en login:", error);
+        let mensajeError = "Credenciales incorrectas.";
+        if (error.code === "auth/user-not-found" || error.code === "auth/wrong-password") {
+          mensajeError = "Email o contraseña inválidos.";
+        }
+        Swal.fire("Error", mensajeError, "error");
       }
-
-      if (
-        error.code ===
-        "auth/weak-password"
-      ) {
-
-        mensaje =
-          "La contraseña es demasiado débil.";
-      }
-
-      Swal.fire(
-        "Error",
-        mensaje,
-        "error"
-      );
-
-    } finally {
-
-      setLoading(false);
     }
   };
 
-  // =========================================
-  // UI
-  // =========================================
-
   return (
-    <div className="login-page">
-
+    <div className="login-wrapper d-flex align-items-center justify-content-center">
       <Container>
-
-        <Row className="justify-content-center align-items-center min-vh-100">
-
-          <Col xs={12} sm={10} md={7} lg={5}>
-
-            <Card className="login-card">
-
-              <Card.Body>
-
-                {/* LOGO */}
-
-                <div className="login-logo">
-                  🌎 PRODE MUNDIAL 2026
+        <Row className="justify-content-center">
+          <Col md={6} lg={5}>
+            <Card className="login-card shadow-lg border-0">
+              <Card.Body className="p-4">
+                <div className="text-center mb-4">
+                  <h2 className="fw-bold text-white">🏆 Fixture 2026</h2>
+                  <p className="text-muted">
+                    {isRegistering ? "Completá tus datos para registrarte" : "Iniciá sesión para pronosticar"}
+                  </p>
                 </div>
 
-                <h2 className="login-title">
-
-                  {isRegistering
-                    ? "Registro"
-                    : "Iniciar Sesión"}
-
-                </h2>
-
                 <Form onSubmit={handleSubmit}>
-
-                  {/* EMPRESA */}
-
-                  <Form.Group className="mb-3">
-
-                    <Form.Label>
-                      Empresa
-                    </Form.Label>
-
-                    <InputGroup>
-
-                      <InputGroup.Text>
-                        <FaBuilding />
-                      </InputGroup.Text>
-
-                      <Form.Select
-                        value={
-                          nuevaEmpresa
-                            ? "nueva"
-                            : empresaId
-                        }
-                        onChange={(e) => {
-
-                          if (
-                            e.target.value ===
-                            "nueva"
-                          ) {
-
-                            setNuevaEmpresa(true);
-
-                            setEmpresaId("");
-
-                          } else {
-
-                            setNuevaEmpresa(false);
-
-                            setEmpresaId(
-                              e.target.value
-                            );
-                          }
-                        }}
-                      >
-
-                        <option value="">
-                          Seleccionar empresa
-                        </option>
-
-                        {empresas.map(
-                          (empresa) => (
-
-                            <option
-                              key={empresa.id}
-                              value={empresa.id}
-                            >
-                              {empresa.nombre}
-                            </option>
-
-                          )
-                        )}
-
-                        {isRegistering && (
-
-                          <option value="nueva">
-                            + Crear nueva empresa
-                          </option>
-
-                        )}
-
-                      </Form.Select>
-
-                    </InputGroup>
-
-                    {/* NUEVA EMPRESA */}
-
-                    {
-                      nuevaEmpresa && (
-
-                        <Form.Control
-                          className="mt-3"
-                          type="text"
-                          placeholder="Nombre de la empresa"
-                          value={nombreEmpresa}
-                          onChange={(e) =>
-                            setNombreEmpresa(
-                              e.target.value
-                            )
-                          }
-                        />
-
-                      )
-                    }
-
-                  </Form.Group>
-
-                  {/* EMAIL */}
-
-                  <Form.Group className="mb-3">
-
-                    <Form.Label>
-                      Email
-                    </Form.Label>
-
-                    <InputGroup>
-
-                      <InputGroup.Text>
-                        <FaEnvelope />
-                      </InputGroup.Text>
-
-                      <Form.Control
-                        type="email"
-                        placeholder="usuario@email.com"
-                        value={email}
-                        onChange={(e) =>
-                          setEmail(
-                            e.target.value
-                          )
-                        }
-                      />
-
-                    </InputGroup>
-
-                  </Form.Group>
-
-                  {/* PASSWORD */}
-
-                  <Form.Group className="mb-3">
-
-                    <Form.Label>
-                      Contraseña
-                    </Form.Label>
-
-                    <InputGroup>
-
-                      <InputGroup.Text>
-                        <FaLock />
-                      </InputGroup.Text>
-
-                      <Form.Control
-                        type="password"
-                        placeholder="********"
-                        value={password}
-                        onChange={(e) =>
-                          setPassword(
-                            e.target.value
-                          )
-                        }
-                      />
-
-                    </InputGroup>
-
-                  </Form.Group>
-
-                  {/* CONFIRM PASSWORD */}
-
-                  {
-                    isRegistering && (
-
-                      <Form.Group className="mb-4">
-
-                        <Form.Label>
-                          Confirmar contraseña
-                        </Form.Label>
-
+                  
+                  {/* INPUTS EXCLUSIVOS PARA REGISTRO */}
+                  {isRegistering && (
+                    <>
+                      {/* Nombre */}
+                      <Form.Group className="mb-3">
                         <InputGroup>
-
-                          <InputGroup.Text>
-                            <FaLock />
-                          </InputGroup.Text>
-
+                          <InputGroup.Text><FaUser className="text-secondary" /></InputGroup.Text>
+                          <span className="input-group-text text-secondary">Nombre</span>
                           <Form.Control
-                            type="password"
-                            placeholder="********"
-                            value={confirmPassword}
-                            onChange={(e) =>
-                              setConfirmPassword(
-                                e.target.value
-                              )
-                            }
+                            type="text"
+                            placeholder="Nombre"
+                            value={nombre}
+                            onChange={(e) => setNombre(e.target.value)}
+                            required
                           />
-
                         </InputGroup>
-
                       </Form.Group>
 
-                    )
-                  }
+                      {/* Apellido */}
+                      <Form.Group className="mb-3">
+                        <InputGroup>
+                          <InputGroup.Text><FaUser className="text-secondary" /></InputGroup.Text>
+                          <span className="input-group-text text-secondary">Apellido</span>
+                          <Form.Control
+                            type="text"
+                            placeholder="Apellido"
+                            value={apellido}
+                            onChange={(e) => setApellido(e.target.value)}
+                            required
+                          />
+                        </InputGroup>
+                      </Form.Group>
 
-                  {/* BOTON */}
+                      {/* Legajo */}
+                      <Form.Group className="mb-4">
+                        <InputGroup>
+                          <InputGroup.Text><FaIdCard className="text-secondary" /></InputGroup.Text>
+                          <span className="input-group-text text-secondary">Legajo</span>
+                          <Form.Control
+                            type="text"
+                            placeholder="Número de Legajo / ID Empleado"
+                            value={legajo}
+                            onChange={(e) => setLegajo(e.target.value)}
+                            required
+                          />
+                        </InputGroup>
+                      </Form.Group>
+                      
+                      <hr className="my-3 border-secondary-subtle" />
+                    </>
+                  )}
 
+                  {/* Campos de Email y Contraseña (Comunes para Login y Registro) */}
+                  
+                  <Form.Group className="mb-4">
+                          <InputGroup>
+                            <InputGroup.Text><FaBuilding className="text-secondary" /></InputGroup.Text>
+                            <Form.Select
+                              value={empresaId}
+                              onChange={(e) => setEmpresaId(e.target.value)}
+                              required
+                            >
+                              <option value="">Selecciona tu Empresa...</option>
+                              {empresas.map((emp) => (
+                                <option key={emp.id} value={emp.id}>
+                                  {emp.nombre}
+                                </option>
+                              ))}
+                            </Form.Select>
+                          </InputGroup>
+                        </Form.Group>
+                  <Form.Group className="mb-3">
+                      <span className="input-group-text text-secondary">Correo electrónico</span>
+                    <InputGroup>
+                      <InputGroup.Text><FaEnvelope className="text-secondary" /></InputGroup.Text>
+                      <Form.Control
+                        type="email"
+                        placeholder="Correo electrónico corporativo"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                      />
+                    </InputGroup>
+                  </Form.Group>
+
+                  <Form.Group className="mb-3">
+                      <span className="input-group-text text-secondary">Contraseña</span>
+                    <InputGroup>
+                      <InputGroup.Text><FaLock className="text-secondary" /></InputGroup.Text>
+                      <Form.Control
+                        type="password"
+                        placeholder="Contraseña"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                      />
+                    </InputGroup>
+                  </Form.Group>
+
+                  {/* Campos de Confirmación y Empresa (Exclusivos para Registro) */}
+                  {isRegistering && (
+                    <>
+                      <Form.Group className="mb-3">
+                          <span className="input-group-text text-secondary">Confirmar contraseña</span>
+                        <InputGroup>
+                          <InputGroup.Text><FaLock className="text-secondary" /></InputGroup.Text>
+                          <Form.Control
+                            type="password"
+                            placeholder="Confirmar contraseña"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            required
+                          />
+                        </InputGroup>
+                      </Form.Group>
+
+                      <Form.Group className="mb-3">
+                        <Form.Check
+                          type="checkbox"
+                          label="Quiero registrar una nueva empresa corporativa"
+                          id="check-empresa"
+                          checked={nuevaEmpresa}
+                          onChange={(e) => {
+                            setNuevaEmpresa(e.target.checked);
+                            setEmpresaId("");
+                            setNombreEmpresa("");
+                          }}
+                          className="small fw-semibold text-muted"
+                        />
+                      </Form.Group>
+
+                      {nuevaEmpresa && (
+                        <Form.Group className="mb-4">
+                          <InputGroup>
+                            <InputGroup.Text><FaBuilding className="text-secondary" /></InputGroup.Text>
+                            <Form.Control
+                              type="text"
+                              placeholder="Nombre de la nueva empresa"
+                              value={nombreEmpresa}
+                              onChange={(e) => setNombreEmpresa(e.target.value)}
+                              required
+                            />
+                          </InputGroup>
+                        </Form.Group>
+                      )}
+                    </>
+                  )}
+
+                  {/* BOTÓN DE ACCIÓN PRINCIPAL */}
                   <Button
+                    variant="dark"
                     type="submit"
-                    className="login-btn"
+                    className="w-100 py-2 fw-bold text-uppercase shadow-sm mb-3"
                     disabled={loading}
                   >
-
-                    {
-                      loading ? (
-
-                        <Spinner
-                          animation="border"
-                          size="sm"
-                        />
-
-                      ) : isRegistering ? (
-
-                        "Crear Cuenta"
-
-                      ) : (
-
-                        "Ingresar"
-
-                      )
-                    }
-
+                    {loading ? (
+                      <Spinner animation="border" size="sm" />
+                    ) : isRegistering ? (
+                      "Crear Cuenta"
+                    ) : (
+                      "Ingresar"
+                    )}
                   </Button>
 
-                  {/* TOGGLE */}
-
-                  <div className="toggle-login">
-
+                  {/* TOGGLE ENTRE LOGIN Y REGISTRO */}
+                  <div className="text-center">
                     <Button
                       variant="link"
+                      className="text-decoration-none small text-secondary"
                       onClick={() => {
-
-                        setIsRegistering(
-                          !isRegistering
-                        );
-
+                        setIsRegistering(!isRegistering);
                         setEmail("");
-
                         setPassword("");
-
                         setConfirmPassword("");
-
                         setEmpresaId("");
-
                         setNuevaEmpresa(false);
-
                         setNombreEmpresa("");
+                        setNombre("");
+                        setApellido("");
+                        setLegajo("");
                       }}
                     >
-
-                      {
-                        isRegistering
-                          ? "¿Ya tenés cuenta? Iniciá sesión"
-                          : "¿No tenés cuenta? Registrate"
-                      }
-
+                      {isRegistering
+                        ? "¿Ya tenés cuenta? Iniciá sesión"
+                        : "¿No tenés cuenta? Registrate gratis"}
                     </Button>
-
                   </div>
 
                 </Form>
-
               </Card.Body>
-
             </Card>
-
           </Col>
-
         </Row>
-
       </Container>
-
     </div>
   );
 };

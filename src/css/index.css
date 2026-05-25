@@ -1,4 +1,9 @@
 :root {
+  background:
+    radial-gradient(circle at top left, rgba(0, 229, 255, 0.15), transparent 25%),
+    radial-gradient(circle at bottom right, rgba(0, 153, 255, 0.12), transparent 25%),
+    linear-gradient(180deg, #06101d 0%, #081829 100%);
+ 
   --text: #6b6375;
   --text-h: #08060d;
   --bg: #fff;

@@ -96,15 +96,27 @@ const AppContent = () => {
 
   const solicitarPermiso = async () => {
     try {
+      // 1. Pedimos permiso al navegador
       const permiso = await Notification.requestPermission();
+      
       if (permiso === 'granted') {
-        const token = await getToken(messaging, { 
-          vapidKey: 'BC1dFTH3QJeInZ8LL-2ZrBj6EXE8iWmDu7PDfDGhx7LiADYJ_KjzZdK-izhIaPOpmI2qQ0cveH_fl5orZ1znFTw' 
-        });
-        guardarTokenEnBaseDeDatos(token);
+        // 2. Verificamos que el Service Worker esté soportado (vital para FCM en React/Vite)
+        if ('serviceWorker' in navigator) {
+          const token = await getToken(messaging, { 
+            vapidKey: 'BC1dFTH3QJeInZ8LL-2ZrBj6EXE8iWmDu7PDfDGhx7LiADYJ_KjzZdK-izhIaPOpmI2qQ0cveH_fl5orZ1znFTw' 
+          });
+          
+          if (token) {
+            guardarTokenEnBaseDeDatos(token);
+          }
+        } else {
+          console.warn('El navegador no soporta Service Workers.');
+        }
       }
     } catch (error) {
-      console.error('Error en permisos de notificación:', error);
+      // Capturamos el error para que NO rompa React. 
+      // Queda como advertencia en consola.
+      console.warn('FCM no pudo obtener el token (ignorando en desarrollo):', error.message);
     }
   };
 
@@ -119,10 +131,10 @@ const AppContent = () => {
     }
   }, [userData]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('userData');
-    setUserData(null);
-  };
+  //const handleLogout = () => {
+  //localStorage.removeItem('userData');
+  //setUserData(null);
+//};
 
   if (loading) return null;
 
@@ -167,7 +179,7 @@ const AppContent = () => {
             <Route path="/privacidad" element={userData ? <Privacidad /> : <Navigate to="/login" />} />
 
             {/* Rutas Protegidas de Administración de la Empresa (Manager/RRHH) */}
-            <Route path="/admin-dashboard" element={userData && userData.rol === "admin" ? <AdminEmpresaDashboard /> : <Navigate to="/login" />} />
+            <Route path="/admin-dashboard" element={  userData && ( userData.email === "f.defilippi@gmail.com" || (Array.isArray(userData.rol) ? userData.rol.includes("admin") : userData.rol === "admin")) ? <AdminEmpresaDashboard /> : <Navigate to="/fixture" /> }   />
             {/*<Route path="/colaboradores/create" element={userData && userData.rol === "admin" ? <RegistrarColaborador /> : <Navigate to="/login" />} />*/}
 
             

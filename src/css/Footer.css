@@ -1,0 +1,66 @@
+.footer-container {
+  padding: 2rem 1rem;
+ background:
+    radial-gradient(circle at top left, rgba(0, 229, 255, 0.15), transparent 25%),
+    radial-gradient(circle at bottom right, rgba(0, 153, 255, 0.12), transparent 25%),
+    linear-gradient(180deg, #06101d 0%, #081829 100%);
+  
+  color: #8adfff;
+  font-size: 0.85rem;
+}
+
+.footer-divider {
+  border-top: 1px solid rgba(0, 229, 255, 0.1);
+  margin-bottom: 2rem;
+}
+
+.rodapie {
+  width: 75px;
+  height: auto;
+  opacity: 0.8;
+  filter: grayscale(100%);
+  transition: 0.3s;
+}
+
+.rodapie:hover {
+  filter: grayscale(0%);
+  opacity: 1;
+}
+
+.eslogan {
+  font-style: italic;
+  font-size: 0.9rem;
+  color: #cfe8ff;
+}
+
+.social-icons .btn {
+  border-radius: 50% !important;
+  width: 40px;
+  height: 40px;
+  color: #dedfe0 !important;
+    background: rgba(0, 229, 255, 0.15) !important;
+  padding: 8px;
+  border-color: rgba(0, 229, 255, 0.3) !important;
+  transition: 0.3s;
+}
+
+.social-icons .btn:hover {
+  background: #00e5ff !important;
+  color: #dadee2 !important;
+}
+
+.privacidad-link {
+  color: #009dff;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.privacidad-link:hover {
+  text-decoration: underline;
+  color: white;
+}
+
+.copyright {
+  opacity: 0.6;
+  margin-bottom: 0.5rem;
+}

@@ -201,29 +201,6 @@ export const FixtureMundial = () => {
         {/* Sección Partidos */}
         <div className="fixture-grid">
           
-          {/* Botonera de Filtros de Ordenamiento */}
-          <div className="d-flex justify-content-end mb-3 gap-2 bg-light p-2 rounded shadow-sm">
-            <span className="me-auto align-self-center text-muted small fw-bold ps-1">
-              🏃‍♂️ Participantes Activos: {ranking.length}
-            </span>
-            <Button 
-              variant={criterioOrden === "fecha" ? "success" : "outline-secondary"} 
-              size="sm" 
-              className="fw-bold"
-              onClick={() => setCriterioOrden("fecha")}
-            >
-              📅 Ordenar por Fecha
-            </Button>
-            <Button 
-              variant={criterioOrden === "grupo" ? "success" : "outline-secondary"} 
-              size="sm" 
-              className="fw-bold"
-              disabled={faseActiva !== "grupos"} // Deshabilitar si no estamos en fase de grupos
-              onClick={() => setCriterioOrden("grupo")}
-            >
-              🔤 Ordenar por Grupo
-            </Button>
-          </div>
 
           {/* Grilla React-Bootstrap estructurada en 3 columnas en pantallas grandes (lg=4) */}
           <Row className="g-3">
@@ -339,6 +316,29 @@ export const FixtureMundial = () => {
               variant="outline-info"
               className="w-100 mb-3"
               onClick={cerrarSesion}>Cerrar Sesión </Button>
+          {/* Botonera de Filtros de Ordenamiento */}
+          <div className="d-flex justify-content-end mb-3 gap-2 bg-light p-2 rounded shadow-sm">
+            <span className="me-auto align-self-center text-muted small fw-bold ps-1">
+              🏃‍♂️ Participantes Activos: {ranking.length}
+            </span>
+            <Button 
+              variant={criterioOrden === "fecha" ? "success" : "outline-secondary"} 
+              size="sm" 
+              className="fw-bold"
+              onClick={() => setCriterioOrden("fecha")}
+            >
+              📅 Ordenar por Fecha
+            </Button>
+            <Button 
+              variant={criterioOrden === "grupo" ? "success" : "outline-secondary"} 
+              size="sm" 
+              className="fw-bold"
+              disabled={faseActiva !== "grupos"} // Deshabilitar si no estamos en fase de grupos
+              onClick={() => setCriterioOrden("grupo")}
+            >
+              🔤 Ordenar por Grupo
+            </Button>
+          </div>
             
             {/* TABLA DE PREMIOS DINÁMICA */}
             <Card className="shadow-sm border-0 mb-3">

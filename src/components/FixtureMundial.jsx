@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom"; // <-- Agregamos Link
+import { useNavigate, Link } from "react-router-dom"; 
 import { Card, Row, Col, Form, Table, Badge, Alert, Button, Tabs, Tab } from "react-bootstrap"; 
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db} from "../firebaseConfig/firebase"; 
@@ -12,8 +12,6 @@ import { guardarPrediccion, escucharRanking } from "./prodeService";
 import Swal from "sweetalert2";
 import { banderas } from "./banderas"; // Mapa de nombres de países a URLs de banderas
 
-const POZO_TOTAL = 100000;
-
 // Combinamos ambos arreglos de datos para el filtrado dinámico en la UI
 const todosLosPartidos = [...fixtureConLimite, ...fixtureFase2ConLimite];
 
@@ -23,8 +21,13 @@ export const FixtureMundial = () => {
   const [ranking, setRanking] = useState([]);
   const [resultadosReales, setResultadosReales] = useState({}); 
   const [faseActiva, setFaseActiva] = useState("grupos");
+  const [criterioOrden, setCriterioOrden] = useState("fecha"); // Estado para manejar el ordenamiento ("fecha" o "grupo")
   const navigate = useNavigate();
   
+  // Cálculo dinámico del pozo total basado en la cantidad de participantes reales
+  const montoPorPersona = empresaData?.montoPorParticipante || 0;
+  const pozoCalculado = montoPorPersona * ranking.length;
+
   useEffect(() => {
     console.log("Datos corporativos en el fixture:", { userData, empresaData });
   }, [userData, empresaData]);
@@ -162,14 +165,15 @@ export const FixtureMundial = () => {
 
     Swal.fire({ title: "Guardado", text: "Predicción registrada con éxito", icon: "success", timer: 1500, showConfirmButton: false });
   };
+
   const cerrarSesion = async () => {
-      try {
-        await logout(); // Esto ejecuta el signOut(auth) de tu UserContext
-        navigate("/");
-      } catch (error) {
-        console.error("Error al cerrar sesión:", error);
-      }
-    };
+    try {
+      await logout(); // Esto ejecuta el signOut(auth) de tu UserContext
+      navigate("/");
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
+    }
+  };
 
   return (
     <div className="fixture-container">
@@ -196,91 +200,136 @@ export const FixtureMundial = () => {
         
         {/* Sección Partidos */}
         <div className="fixture-grid">
-          {todosLosPartidos
-            .filter((partido) => {
-              if (faseActiva === "grupos") return !partido.fase; 
-              if (faseActiva === "semis") {
-                return partido.fase === "semis" && (partido.id === 101 || partido.id === 102);
-              }
-              if (faseActiva === "finales") {
-                return partido.fase === "semis" && (partido.id === 103 || partido.id === 104);
-              }
-              return partido.fase === faseActiva;
-            })
-            .map((partido) => {
-              const pred = predicciones[partido.id] || {};
-              const bloqueado = comprobacionBloqueo(partido.fechaLimite);
+          
+          {/* Botonera de Filtros de Ordenamiento */}
+          <div className="d-flex justify-content-end mb-3 gap-2 bg-light p-2 rounded shadow-sm">
+            <span className="me-auto align-self-center text-muted small fw-bold ps-1">
+              🏃‍♂️ Participantes Activos: {ranking.length}
+            </span>
+            <Button 
+              variant={criterioOrden === "fecha" ? "success" : "outline-secondary"} 
+              size="sm" 
+              className="fw-bold"
+              onClick={() => setCriterioOrden("fecha")}
+            >
+              📅 Ordenar por Fecha
+            </Button>
+            <Button 
+              variant={criterioOrden === "grupo" ? "success" : "outline-secondary"} 
+              size="sm" 
+              className="fw-bold"
+              disabled={faseActiva !== "grupos"} // Deshabilitar si no estamos en fase de grupos
+              onClick={() => setCriterioOrden("grupo")}
+            >
+              🔤 Ordenar por Grupo
+            </Button>
+          </div>
 
-              let encabezadoCard = `Grupo ${partido.grupo}`;
-              if (partido.fase) {
-                if (partido.id === 103) encabezadoCard = "TERCER PUESTO";
-                else if (partido.id === 104) encabezadoCard = "GRAN FINAL";
-                else encabezadoCard = partido.fase.toUpperCase();
-              }
+          {/* Grilla React-Bootstrap estructurada en 3 columnas en pantallas grandes (lg=4) */}
+          <Row className="g-3">
+            {todosLosPartidos
+              .filter((partido) => {
+                if (faseActiva === "grupos") return !partido.fase; 
+                if (faseActiva === "semis") {
+                  return partido.fase === "semis" && (partido.id === 101 || partido.id === 102);
+                }
+                if (faseActiva === "finales") {
+                  return partido.fase === "semis" && (partido.id === 103 || partido.id === 104);
+                }
+                return partido.fase === faseActiva;
+              })
+              .sort((a, b) => {
+                if (criterioOrden === "grupo" && faseActiva === "grupos") {
+                  const grupoA = a.grupo || "";
+                  const grupoB = b.grupo || "";
+                  // Si pertenecen al mismo grupo, ordena por fecha de manera secundaria
+                  if (grupoA === grupoB) {
+                    return a.fechaLimite.localeCompare(b.fechaLimite);
+                  }
+                  return grupoA.localeCompare(grupoB);
+                }
+                // Orden por defecto: Fecha Límite / Cronológico
+                return a.fechaLimite.localeCompare(b.fechaLimite);
+              })
+              .map((partido) => {
+                const pred = predicciones[partido.id] || {};
+                const bloqueado = comprobacionBloqueo(partido.fechaLimite);
 
-              return (
-                <Card className={`match-card ${bloqueado ? "partido-deshabilitado" : ""}`} key={partido.id}>
-                  <Card.Body className="p-2">
-                    <div className="match-header text-muted">
-                      <Badge bg="success"><span>{encabezadoCard}</span></Badge>
-                      <Badge bg="info" text="dark"><span>📅 {partido.fecha}</span></Badge>
-                    </div>
+                let encabezadoCard = `Grupo ${partido.grupo}`;
+                if (partido.fase) {
+                  if (partido.id === 103) encabezadoCard = "TERCER PUESTO";
+                  else if (partido.id === 104) encabezadoCard = "GRAN FINAL";
+                  else encabezadoCard = partido.fase.toUpperCase();
+                }
 
-                    <div className="mt-2">
-                      {bloqueado ? (
-                        <Alert variant="danger" className="py-1 px-2 text-center small fw-bold m-0">
-                          🚫 Cerrado
-                        </Alert>
-                      ) : (
-                        <Alert variant="warning" className="py-1 px-2 text-center small m-0 text-dark">
-                          ⏳ Hasta: <strong>{formatearFechaTexto(partido.fechaLimite)}</strong>
-                        </Alert>
-                      )}
-                    </div>
+                return (
+                  <Col xs={12} md={6} lg={4} key={partido.id}>
+                    <Card className={`match-card h-100 ${bloqueado ? "partido-deshabilitado" : ""}`}>
+                      <Card.Body className="p-2 d-flex flex-column justify-content-between">
+                        <div>
+                          <div className="match-header text-muted">
+                            <Badge bg="success"><span>{encabezadoCard}</span></Badge>
+                            <Badge bg="info" text="dark"><span>📅 {partido.fecha}</span></Badge>
+                          </div>
 
-                    <div className="teams-container mt-2">
-                      <div className="team-box">
-                      <img src={banderas[partido.local]} alt={partido.local} className="flag-icon" />
-                        <span className="fs-6">{partido.local}</span>
-                        <Form.Control
-                          type="number"
-                          min="0"
-                          disabled={bloqueado}
-                          value={pred.predLocal ?? ""}
-                          onChange={(e) => handleChange(partido.id, "predLocal", e.target.value)}
-                          className="text-center fw-bold"
-                        />
-                      </div>
+                          <div className="mt-2">
+                            {bloqueado ? (
+                              <Alert variant="danger" className="py-1 px-2 text-center small fw-bold m-0">
+                                🚫 Cerrado
+                              </Alert>
+                            ) : (
+                              <Alert variant="warning" className="py-1 px-2 text-center small m-0 text-dark">
+                                ⏳ Hasta: <strong>{formatearFechaTexto(partido.fechaLimite)}</strong>
+                              </Alert>
+                            )}
+                          </div>
 
-                      <div className="vs text-muted">VS</div>
+                          <div className="teams-container mt-2">
+                            <div className="team-box">
+                              <img src={banderas[partido.local]} alt={partido.local} className="flag-icon" />
+                              <span className="fs-6">{partido.local}</span>
+                              <Form.Control
+                                type="number"
+                                min="0"
+                                disabled={bloqueado}
+                                value={pred.predLocal ?? ""}
+                                onChange={(e) => handleChange(partido.id, "predLocal", e.target.value)}
+                                className="text-center fw-bold"
+                              />
+                            </div>
 
-                      <div className="team-box">
-                        <img src={banderas[partido.visitante]} alt={partido.visitante} className="flag-icon" />
-                        <span className="fs-6">{partido.visitante}</span>
-                        <Form.Control
-                          type="number"
-                          min="0"
-                          disabled={bloqueado}
-                          value={pred.predVisitante ?? ""}
-                          onChange={(e) => handleChange(partido.id, "predVisitante", e.target.value)}
-                          className="text-center fw-bold"
-                        />
-                      </div>
-                    </div>
+                            <div className="vs text-muted">VS</div>
 
-                    <div className="text-center mt-3">
-                      <button
-                        className={`btn btn-sm fw-bold px-3 ${bloqueado ? "btn-secondary" : "btn-success"}`}
-                        disabled={bloqueado}
-                        onClick={() => guardar(partido)}
-                      >
-                        {bloqueado ? "Cerrado" : "Guardar"}
-                      </button>
-                    </div>
-                  </Card.Body>
-                </Card>
-              );
-            })}
+                            <div className="team-box">
+                              <img src={banderas[partido.visitante]} alt={partido.visitante} className="flag-icon" />
+                              <span className="fs-6">{partido.visitante}</span>
+                              <Form.Control
+                                type="number"
+                                min="0"
+                                disabled={bloqueado}
+                                value={pred.predVisitante ?? ""}
+                                onChange={(e) => handleChange(partido.id, "predVisitante", e.target.value)}
+                                className="text-center fw-bold"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="text-center mt-3">
+                          <button
+                            className={`btn btn-sm fw-bold px-3 w-100 ${bloqueado ? "btn-secondary" : "btn-success"}`}
+                            disabled={bloqueado}
+                            onClick={() => guardar(partido)}
+                          >
+                            {bloqueado ? "Cerrado" : "Guardar"}
+                          </button>
+                        </div>
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                );
+              })}
+          </Row>
         </div>
 
         {/* Sección Ranking (Fija a la derecha) */}
@@ -288,12 +337,14 @@ export const FixtureMundial = () => {
           <div className="ranking-sticky">
             <Button
               variant="outline-info"
+              className="w-100 mb-3"
               onClick={cerrarSesion}>Cerrar Sesión </Button>
-            {/* TABLA DE PREMIOS */}
+            
+            {/* TABLA DE PREMIOS DINÁMICA */}
             <Card className="shadow-sm border-0 mb-3">
               <Card.Header className="bg-success text-white text-center py-2">
                 <h5 className="m-0 fw-bold">💰 Pozo Corporativo Estimado</h5>
-                <h4 className="m-0 fw-bold mt-1">${POZO_TOTAL.toLocaleString('es-AR')}</h4>
+                <h4 className="m-0 fw-bold mt-1">${pozoCalculado.toLocaleString('es-AR')}</h4>
               </Card.Header>
               <Card.Body className="p-0">
                 <Table hover className="m-0 align-middle text-center small">
@@ -308,17 +359,17 @@ export const FixtureMundial = () => {
                     <tr>
                       <td className="fw-bold">🥇 1° Premio</td>
                       <td>70%</td>
-                      <td className="text-end fw-bold text-success px-3">${(POZO_TOTAL * 0.7).toLocaleString('es-AR')}</td>
+                      <td className="text-end fw-bold text-success px-3">${(pozoCalculado * 0.7).toLocaleString('es-AR')}</td>
                     </tr>
                     <tr>
                       <td>🥈 2° Premio</td>
                       <td>20%</td>
-                      <td className="text-end fw-bold px-3">${(POZO_TOTAL * 0.2).toLocaleString('es-AR')}</td>
+                      <td className="text-end fw-bold px-3">${(pozoCalculado * 0.2).toLocaleString('es-AR')}</td>
                     </tr>
                     <tr>
                       <td>🥉 3° Premio</td>
                       <td>10%</td>
-                      <td className="text-end fw-bold px-3">${(POZO_TOTAL * 0.1).toLocaleString('es-AR')}</td>
+                      <td className="text-end fw-bold px-3">${(pozoCalculado * 0.1).toLocaleString('es-AR')}</td>
                     </tr>
                   </tbody>
                 </Table>
@@ -375,13 +426,13 @@ export const FixtureMundial = () => {
                 </ul>
               </Card.Body>
             </Card>
-                      {userData?.rol === "admin" && (
-                        <div className="text-center mb-3">
-                          <Link to="/admin-dashboard" className="btn btn-outline-danger btn-sm fw-bold shadow-sm">
-                            ⚙️ Panel de Control Corporativo
-                          </Link>
-                        </div>
-                      )}
+            {userData?.rol === "admin" && (
+              <div className="text-center mb-3 mt-3">
+                <Link to="/admin-dashboard" className="btn btn-outline-danger btn-sm fw-bold shadow-sm w-100">
+                  ⚙️ Panel de Control Corporativo
+                </Link>
+              </div>
+            )}
 
           </div>
         </aside>
